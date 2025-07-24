@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"  xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link  rel="stylesheet" th:href="@{/css/input.css}">
+</head>
+<body>
+       <section class="py-20 gradient-bg" th:fragment= "stats">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center text-white">
+                <div>
+                    <div class="text-4xl font-bold mb-2" th:text="${stats?.users ?: '10M+'}">10M+</div>
+                    <div class="text-purple-200">Người dùng tin tưởng</div>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold mb-2" th:text="${stats?.files ?: '1B+'}">1B+</div>
+                    <div class="text-purple-200">File được quản lý</div>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold mb-2" th:text="${stats?.countries ?: '150+'}">150+</div>
+                    <div class="text-purple-200">Quốc gia sử dụng</div>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold mb-2" th:text="${stats?.uptime ?: '99.9%'}">99.9%</div>
+                    <div class="text-purple-200">Thời gian hoạt động</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script th:src="@{/js/script.js}" ></script>
+</body>
+</html>

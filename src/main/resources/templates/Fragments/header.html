@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+  lang="vi"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+      defer
+    ></script>
+    <link rel="stylesheet" th:href="@{/css/input.css}" />
+  </head>
+  <body>
+    <!-- Navbar -->
+    <!-- <nav class="bg-white shadow-md" th:fragment="header">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex">
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="/" class="text-2xl font-bold text-indigo-600">FileTransfer</a>
+                </div>
+                <div class=" sm:ml-6 sm:flex sm:space-x-8">
+                    <a href="/files/dashboard" class="inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium text-gray-900">Dashboard</a>
+                    <a href="/files/list" class="inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium text-gray-900">List</a>
+                </div>
+            </div>
+            <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                <div class="relative">
+                    <span class="inline-flex items-center text-sm font-medium text-gray-600">
+                        Welcome, <span sec:authentication="name" class="font-bold">User</span>
+                    </span>
+                </div>
+                <form th:action="@{/logout}" method="post" class="ml-4">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div> -->
+
+    <nav class="fixed top-0 w-full z-50" th:fragment="header">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center space-x-2">
+            <div
+              class="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center"
+            >
+              <i class="fas fa-folder-open text-white text-lg"></i>
+            </div>
+            <a th:href="@{/}">
+              <span
+                class="text-2xl font-bold text-white"
+                th:text="${companyName ?: 'FileHub'}"
+                >FileHub</span
+              >
+            </a>
+          </div>
+
+          <div class="hidden md:flex items-center space-x-8">
+            <a
+              href="#features"
+              class="text-white hover:text-purple-200 transition-colors"
+              >Tính năng</a
+            >
+            <a
+              href="/files/dashboard"
+              class="text-white hover:text-purple-200 transition-colors"
+              >Dashboard</a
+            >
+            <a
+              href="/files/list"
+              class="text-white hover:text-purple-200 transition-colors"
+              >List</a
+            >
+
+            <!-- Nếu đã đăng nhập -->
+            <div sec:authorize="isAuthenticated()">
+              <span class="text-white font-semibold">
+                Xin chào, <span sec:authentication="name">user</span>
+              </span>
+            </div>
+
+            <!-- Nếu chưa đăng nhập -->
+            <div sec:authorize="isAnonymous()">
+              <a th:href="@{/login}">
+                <button
+                  class="bg-white text-purple-600 px-6 py-2 rounded-full font-semibold hover:bg-purple-50 transition-colors"
+                >
+                  Đăng nhập
+                </button>
+              </a>
+            </div>
+          </div>
+
+          <div class="md:hidden">
+            <button class="text-white text-xl">
+              <i class="fas fa-bars"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <nav class="fixed top-0 w-full z-50 bg-blue-500" th:fragment="nav">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center space-x-2">
+            <div
+              class="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center"
+            >
+              <i class="fas fa-folder-open text-white text-lg"></i>
+            </div>
+            <a th:href="@{/}">
+              <span
+                class="text-2xl font-bold text-white"
+                th:text="${companyName ?: 'FileHub'}"
+                >FileHub</span
+              >
+            </a>
+          </div>
+
+          <div class="hidden md:flex items-center space-x-8">
+            <a
+              href="#features"
+              class="text-white hover:text-purple-200 transition-colors"
+              >Tính năng</a
+            >
+            <a
+              href="/files/dashboard"
+              class="text-white hover:text-purple-200 transition-colors"
+              >Dashboard</a
+            >
+            <a
+              href="/files/list"
+              class="text-white hover:text-purple-200 transition-colors"
+              >List</a
+            >
+
+            <!-- Nếu đã đăng nhập -->
+            <div sec:authorize="isAuthenticated()">
+              <span class="text-white font-semibold">
+                Xin chào, <span sec:authentication="name">user</span>
+              </span>
+            </div>
+
+            <!-- Nếu chưa đăng nhập -->
+            <div sec:authorize="isAnonymous()">
+              <a href="/login">
+                <button
+                  class="bg-white text-purple-600 px-6 py-2 rounded-full font-semibold hover:bg-purple-50 transition-colors"
+                >
+                  Đăng nhập
+                </button>
+              </a>
+            </div>
+          </div>
+
+          <div class="md:hidden">
+            <button class="text-white text-xl">
+              <i class="fas fa-bars"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <nav
+      class="glass-effect border-b border-gray-200 sticky top-0 z-50"
+      th:fragment="nav-1"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 flex items-center">
+              <div
+                class="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-cloud-upload-alt text-white text-lg"></i>
+              </div>
+              <a
+                href="/"
+                class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent"
+              >
+                FileTransfer
+              </a>
+            </div>
+
+            <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
+              <a
+                href="/files/dashboard"
+                class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all duration-200"
+              >
+                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+              </a>
+              <a
+                href="/files/list"
+                class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all duration-200"
+              >
+                <i class="fas fa-folder mr-2"></i>My Files
+              </a>
+              <a
+                href="/profile"
+                class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600"
+              >
+                <i class="fas fa-user mr-2"></i>Profile
+              </a>
+            </div>
+          </div>
+
+          <div
+            class="flex items-center space-x-4"
+            sec:authorize="isAuthenticated()"
+          >
+            <div class="hidden md:flex items-center space-x-3">
+              <div class="text-right">
+                <p class="text-sm font-medium text-gray-900">
+                  <span sec:authentication="name">Username</span>
+                </p>
+                <p class="text-xs text-gray-600">
+                  Email:
+                      
+                  <span th:text="${#authentication.principal.email}"
+                    >user@example.com</span
+                  >
+                </p>
+              </div>
+
+              <div
+                class="w-8 h-8 rounded-full overflow-hidden ring-2 ring-purple-500"
+              >
+                <img
+                  th:if="${#authentication.principal.avatar != null}"
+                  th:src="@{|/uploads/avatars/${#authentication.principal.avatar}|}"
+                  alt="Avatar"
+                  class="w-full h-full object-cover"
+                />
+                <div
+                  th:unless="${#authentication.principal.avatar != null}"
+                  class="w-full h-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center"
+                >
+                  <i class="fas fa-user text-white text-xs"></i>
+                </div>
+              </div>
+            </div>
+
+            <form th:action="@{/logout}" method="post">
+              <button
+                type="submit"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium 
+                text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200"
+              >
+                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <script th:src="@{/js/script.js}"></script>
+  </body>
+</html>

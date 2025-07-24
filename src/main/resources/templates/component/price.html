@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"  xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link  rel="stylesheet" th:href="@{/css/input.css}">
+</head>
+<body>
+    <section id="pricing" class="py-20 bg-gray-50" th:fragment="price">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">Giá cả phù hợp mọi nhu cầu</h2>
+                <p class="text-xl text-gray-600">Chọn gói phù hợp với quy mô và ngân sách của bạn</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Basic Plan -->
+                <div class="bg-white rounded-2xl p-8 shadow-lg hover-scale">
+                    <div class="text-center mb-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Cơ bản</h3>
+                        <div class="text-4xl font-bold text-purple-600 mb-2">Miễn phí</div>
+                        <p class="text-gray-600">Cho cá nhân và startup</p>
+                    </div>
+                    
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>5GB lưu trữ</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Tối đa 3 người dùng</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Hỗ trợ cơ bản</span>
+                        </li>
+                    </ul>
+                    
+                    <button class="w-full bg-purple-100 text-purple-600 py-3 rounded-full font-semibold hover:bg-purple-200 transition-colors">
+                        Bắt đầu miễn phí
+                    </button>
+                </div>
+                
+                <!-- Pro Plan -->
+                <div class="bg-white rounded-2xl p-8 shadow-lg hover-scale relative border-2 border-purple-500">
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span class="bg-purple-500 text-white px-4 py-1 rounded-full text-sm font-semibold">Phổ biến nhất</span>
+                    </div>
+                    
+                    <div class="text-center mb-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Chuyên nghiệp</h3>
+                        <div class="text-4xl font-bold text-purple-600 mb-2">$19<span class="text-lg text-gray-600">/tháng</span></div>
+                        <p class="text-gray-600">Cho doanh nghiệp nhỏ</p>
+                    </div>
+                    
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>100GB lưu trữ</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Tối đa 10 người dùng</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>AI tìm kiếm nâng cao</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Hỗ trợ 24/7</span>
+                        </li>
+                    </ul>
+                    
+                    <button class="w-full bg-purple-600 text-white py-3 rounded-full font-semibold hover:bg-purple-700 transition-colors">
+                        Chọn gói Pro
+                    </button>
+                </div>
+                
+                <!-- Enterprise Plan -->
+                <div class="bg-white rounded-2xl p-8 shadow-lg hover-scale">
+                    <div class="text-center mb-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Doanh nghiệp</h3>
+                        <div class="text-4xl font-bold text-purple-600 mb-2">$49<span class="text-lg text-gray-600">/tháng</span></div>
+                        <p class="text-gray-600">Cho tổ chức lớn</p>
+                    </div>
+                    
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Lưu trữ không giới hạn</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Người dùng không giới hạn</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Tích hợp API</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Quản lý tùy chỉnh</span>
+                        </li>
+                    </ul>
+                    
+                    <button class="w-full bg-gray-900 text-white py-3 rounded-full font-semibold hover:bg-gray-800 transition-colors">
+                        Liên hệ tư vấn
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script th:src="@{/js/script.js}" ></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"  xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link  rel="stylesheet" th:href="@{/css/input.css}">
+</head>
+<body>
+       <section id="features" class="py-20 bg-white" th:fragment= "features">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">Tính năng vượt trội</h2>
+                <p class="text-xl text-gray-600">Khám phá những tính năng mạnh mẽ giúp công việc của bạn hiệu quả hơn</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-8 hover-scale">
+                    <div class="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-brain text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">AI Thông minh</h3>
+                    <p class="text-gray-600">Tự động phân loại và tổ chức file dựa trên nội dung với công nghệ AI tiên tiến</p>
+                </div>
+                
+                <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-8 hover-scale">
+                    <div class="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-shield-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Bảo mật tuyệt đối</h3>
+                    <p class="text-gray-600">Mã hóa end-to-end, xác thực 2FA và kiểm soát quyền truy cập chi tiết</p>
+                </div>
+                
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 hover-scale">
+                    <div class="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-users text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Cộng tác liền mạch</h3>
+                    <p class="text-gray-600">Chia sẻ và làm việc nhóm real-time với các công cụ cộng tác mạnh mẽ</p>
+                </div>
+                
+                <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-8 hover-scale">
+                    <div class="w-16 h-16 bg-yellow-500 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-search text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Tìm kiếm thông minh</h3>
+                    <p class="text-gray-600">Tìm kiếm theo nội dung, metadata và thậm chí cả hình ảnh trong file</p>
+                </div>
+                
+                <div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-8 hover-scale">
+                    <div class="w-16 h-16 bg-pink-500 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-mobile-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Đa nền tảng</h3>
+                    <p class="text-gray-600">Truy cập file từ mọi thiết bị với đồng bộ hóa tự động</p>
+                </div>
+                
+                <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8 hover-scale">
+                    <div class="w-16 h-16 bg-indigo-500 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-chart-line text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Phân tích chi tiết</h3>
+                    <p class="text-gray-600">Thống kê sử dụng, báo cáo hiệu suất và insights thông minh</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script th:src="@{/js/script.js}" ></script>
+</body>
+</html>

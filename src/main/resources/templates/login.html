@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+ <link  rel="stylesheet" th:href="@{/css/main.css}">
+
+
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+
+ <th:block th:replace= "~{ Fragments/header :: header}" ></th:block>
+<div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold text-center text-gray-900">Login to your account</h2>
+    <form method="post" th:action="@{/login}" class="space-y-6">
+        <div>
+            <label for="username" class="text-sm font-medium text-gray-700">Username</label>
+            <input type="text" id="username" name="username"
+                   class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                   required>
+        </div>
+        <div>
+            <label for="password" class="text-sm font-medium text-gray-700">Password</label>
+            <input type="password" id="password" name="password"
+                   class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                   required>
+        </div>
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+                    Remember me
+                </label>
+            </div>
+        </div>
+        <div>
+            <button type="submit"
+                    class="w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Login
+            </button>
+        </div>
+        <div class="text-center">
+            <a href="/register" class="text-sm text-indigo-600 hover:underline">Don't have an account? Register</a>
+        </div>
+        <div th:if="${param.error}" class="p-4 mt-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+            Invalid username or password.
+        </div>
+        <div th:if="${param.logout}" class="p-4 mt-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
+            You have been logged out.
+        </div>
+    </form>
+</div>
+</body>
+</html>

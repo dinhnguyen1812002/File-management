@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - FileTransfer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+         <link th:fragment="link-css" rel="stylesheet" th:href="@{/css/input.css}">
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Enhanced Navbar -->
+<nav th:replace= "~{ Fragments/header :: nav-1}" > </nav>
+<!-- Hero Section with Profile Header -->
+<div class="gradient-bg relative overflow-hidden">
+    <div class="absolute inset-0 opacity-20">
+        <div class="absolute top-10 left-10 w-16 h-16 bg-white rounded-full animate-pulse"></div>
+        <div class="absolute top-32 right-20 w-12 h-12 bg-purple-300 rounded-full animate-bounce"></div>
+        <div class="absolute bottom-20 left-1/4 w-8 h-8 bg-indigo-300 rounded-full animate-ping"></div>
+    </div>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+        <div class="text-center">
+            <div class="inline-block relative slide-in">
+                <div class="w-32 h-32 rounded-full overflow-hidden mx-auto avatar-glow ring-4 ring-white/30">
+                    <img th:if="${user.avatar != null}" th:src="@{'/avatars/' + ${user.avatar}}" alt="User Avatar" class="w-full h-full object-cover">
+                    <div th:unless="${user.avatar != null}" class="w-full h-full bg-gradient-to-br from-purple-400 to-indigo-600 flex items-center justify-center">
+                        <i class="fas fa-user text-white text-4xl"></i>
+                    </div>
+                </div>
+                <button type="button" onclick="openAvatarModal()" class="absolute bottom-2 right-2 bg-white p-2 rounded-full text-purple-600 shadow-lg hover:bg-purple-50 focus:outline-none transition-all duration-200">
+                    <i class="fas fa-camera text-sm"></i>
+                </button>
+            </div>
+            
+            <div class="mt-6 fade-in">
+                <h1 class="text-4xl font-bold text-white mb-2" th:text="${user.username}">Username</h1>
+                <p class="text-purple-200 text-lg" th:text="${user.email}">user@example.com</p>
+                <p class="text-purple-200 text-lg" th:text="${user.bio}">user@example.com</p>
+                <div class="mt-4 inline-flex items-center px-4 py-2 bg-white/20 rounded-full text-white backdrop-blur-sm">
+                    <i class="fas fa-calendar-alt mr-2"></i>
+                    <span>Member since January 2024</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Alert Messages -->
+    <div th:if="${message}" class="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg fade-in">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-check-circle text-green-400"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-green-700" th:text="${message}"></p>
+            </div>
+        </div>
+    </div>
+    
+    <div th:if="${error}" class="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg fade-in">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-circle text-red-400"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-red-700" th:text="${error}"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-upload text-white"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Uploaded Files</p>
+                    <p class="text-2xl font-bold stats-counter" th:text="${#lists.size(user.uploadedFiles)}">0</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-download text-white"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Received Files</p>
+                    <p class="text-2xl font-bold stats-counter" th:text="${#lists.size(user.receivedFiles)}">0</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-hdd text-white"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Storage Used</p>
+                    <p class="text-2xl font-bold stats-counter">2.4 GB</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-share-alt text-white"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Shared Files</p>
+                    <p class="text-2xl font-bold stats-counter">8</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Profile Information -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-user-edit mr-3 text-purple-600"></i>
+                        Profile Information
+                    </h3>
+                    <p class="text-sm text-gray-600 mt-1">Update your personal details and preferences</p>
+                </div>
+                
+                <div class="p-6">
+                    <form th:action="@{/profile/update}" method="post" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-user mr-2 text-gray-400"></i>Username
+                                </label>
+                                <input id="username" name="username" type="text" th:value="${user.username}" disabled 
+                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                                <p class="mt-1 text-xs text-gray-500">Username cannot be changed</p>
+                            </div>
+                            
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-envelope mr-2 text-gray-400"></i>Email Address
+                                </label>
+                                <input id="email" name="email" type="email" th:value="${user.email}" required 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="bio" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-align-left mr-2 text-gray-400"></i>Bio
+                            </label>
+                            <textarea id="bio" name="bio" rows="3" placeholder="Tell us about yourself..."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" class="px-6 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200">
+                                <i class="fas fa-save mr-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activity & Settings -->
+        <div class="space-y-6">
+            <!-- Storage Usage -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-chart-pie mr-3 text-purple-600"></i>
+                    Storage Usage
+                </h4>
+                
+                <div class="relative">
+                    <div class="flex items-center justify-center">
+                        <svg class="w-32 h-32">
+                            <circle cx="64" cy="64" r="50" stroke="#e5e7eb" stroke-width="8" fill="transparent"></circle>
+                            <circle cx="64" cy="64" r="50" stroke="url(#gradient)" stroke-width="8" fill="transparent" 
+                                    stroke-dasharray="314" stroke-dashoffset="125" class="progress-ring"></circle>
+                            <defs>
+                                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#8b5cf6"/>
+                                    <stop offset="100%" style="stop-color:#3b82f6"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div class="absolute text-center">
+                            <p class="text-2xl font-bold text-gray-900">2.4GB</p>
+                            <p class="text-sm text-gray-500">of 5GB</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Documents</span>
+                            <span class="font-medium">1.2GB</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Images</span>
+                            <span class="font-medium">0.8GB</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Others</span>
+                            <span class="font-medium">0.4GB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-clock mr-3 text-purple-600"></i>
+                    Recent Activity
+                </h4>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-upload text-blue-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">Uploaded document.pdf</p>
+                            <p class="text-xs text-gray-500">2 hours ago</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-share text-green-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">Shared presentation.pptx</p>
+                            <p class="text-xs text-gray-500">1 day ago</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-download text-purple-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">Downloaded report.xlsx</p>
+                            <p class="text-xs text-gray-500">3 days ago</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="w-full mt-4 text-sm text-purple-600 hover:text-purple-700 font-medium">
+                    View all activity
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Avatar Upload Modal -->
+<div id="avatar-upload-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Upload Profile Picture</h3>
+                <button type="button" onclick="closeAvatarModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            <form th:action="@{/profile/avatar}" method="post" enctype="multipart/form-data">
+                <div class="text-center mb-6">
+                    <div class="w-24 h-24 mx-auto bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-camera text-white text-2xl"></i>
+                    </div>
+                    <p class="text-sm text-gray-600">Choose a photo that represents you well. It will be displayed on your profile and visible to other users.</p>
+                </div>
+                
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition-colors duration-200">
+                    <div class="space-y-2">
+                        <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl"></i>
+                        <div>
+                            <label for="avatar" class="cursor-pointer">
+                                <span class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
+                                    <i class="fas fa-upload mr-2"></i>Choose File
+                                </span>
+                                <input id="avatar" name="avatar" type="file" accept="image/*" class="hidden" required>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex space-x-3">
+                    <button type="button" onclick="closeAvatarModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-indigo-700 transition-all duration-200">
+                        <i class="fas fa-upload mr-2"></i>Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Modal functions
+    function openAvatarModal() {
+        document.getElementById('avatar-upload-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeAvatarModal() {
+        document.getElementById('avatar-upload-modal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    
+    // File input preview
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('avatar');
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+    if (e.target.files[0]) {
+        const fileName = e.target.files[0].name;
+        const fileSize = (e.target.files[0].size / 1024 / 1024).toFixed(2);
+
+        // ✅ Không thay thế innerHTML nữa — chỉ chèn thêm một div preview
+        const uploadArea = e.target.closest('.border-dashed');
+
+        // Xoá preview cũ nếu có
+        const oldPreview = uploadArea.querySelector('.file-preview');
+        if (oldPreview) oldPreview.remove();
+
+        // Tạo preview mới
+        const preview = document.createElement('div');
+        preview.classList.add('file-preview', 'mt-4');
+        preview.innerHTML = `
+            <div class="space-y-2">
+                <i class="fas fa-check-circle text-green-500 text-3xl"></i>
+                <div>
+                    <p class="font-medium text-gray-900">${fileName}</p>
+                    <p class="text-sm text-gray-500">${fileSize} MB</p>
+                </div>
+                <label for="avatar" class="cursor-pointer">
+                    <span class="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                        Choose different file
+                    </span>
+                </label>
+            </div>
+        `;
+
+        uploadArea.appendChild(preview);
+    }
+});
+        }
+        
+        // Counter animation
+        function animateCounters() {
+            const counters = document.querySelectorAll('.stats-counter');
+            counters.forEach(counter => {
+                const target = parseInt(counter.textContent) || 0;
+                let current = 0;
+                const increment = target / 20;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        counter.textContent = target;
+                        clearInterval(timer);
+                    } else {
+                        counter.textContent = Math.floor(current);
+                    }
+                }, 50);
+            });
+        }
+        
+        // Trigger counter animation on page load
+        setTimeout(animateCounters, 500);
+        
+        // Auto-hide alerts after 5 seconds
+        const alerts = document.querySelectorAll('[class*="bg-green-50"], [class*="bg-red-50"]');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateX(100%)';
+                setTimeout(() => alert.remove(), 300);
+            }, 5000);
+        });
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('avatar-upload-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeAvatarModal();
+        }
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAvatarModal();
+        }
+    });
+</script>
+
+</body>
+</html>

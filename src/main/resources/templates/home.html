@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileHub - Hệ thống quản lý file thông minh</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+     <link th:fragment="link-css" rel="stylesheet" th:href="@{/css/input.css}">
+</head>
+<body class="bg-gray-50 overflow-x-hidden">
+    <!-- Navigation -->
+    
+    <th:block th:replace= "~{ Fragments/header :: nav-1}" ></th:block>
+    <!-- Hero Section -->
+    <div th:replace= "~{component/hero :: hero }"></div>
+    <!-- Features Section -->
+    <div th:replace= "~{component/features :: features }"></div>
+    <!-- Stats Section -->
+    <div th:replace= "~{component/stats :: stats }"></div>
+    <!-- Pricing Section -->
+    <!-- <div th:replace= "~{component/price :: price }"></div> -->
+    <!-- CTA Section -->
+    <div th:replace= "~{component/cta :: cta }"></div>
+    <!-- Footer -->
+    <th:block th:replace= "~{ Fragments/footer :: footer}" ></th:block>
+
+   <script th:src="@{/js/script.js}" ></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"  xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link  rel="stylesheet" th:href="@{/css/input.css}">
+</head>
+<body>
+       <footer id="contact" class="bg-gray-900 text-white py-16" th:fragment= "footer">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-folder-open text-white text-lg"></i>
+                        </div>
+                        <span class="text-2xl font-bold">FileHub</span>
+                    </div>
+                    <p class="text-gray-400 mb-4">Hệ thống quản lý file thông minh cho thời đại số</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-facebook text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-linkedin text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Sản phẩm</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Tính năng</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Bảo mật</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">API</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Tích hợp</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Hỗ trợ</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Trung tâm trợ giúp</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Tài liệu</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Liên hệ</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Trạng thái hệ thống</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Công ty</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Về chúng tôi</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Blog</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Tuyển dụng</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Báo chí</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400">&copy; 2025 FileHub. Tất cả quyền được bảo lưu.</p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">Chính sách bảo mật</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">Điều khoản sử dụng</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script th:src="@{/js/script.js}" ></script>
+</body>
+</html>
