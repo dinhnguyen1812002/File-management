@@ -10,6 +10,15 @@ import com.app.file_transfer.repository.UserRepository;
 import com.app.file_transfer.services.FileService;
 import com.app.file_transfer.services.FileStorageService;
 import com.app.file_transfer.services.FolderService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import jakarta.servlet.http.HttpSession;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import org.springframework.core.io.UrlResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -27,6 +36,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -53,41 +63,63 @@ public class FileController {
     @Autowired
     private FolderRepository folderRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
 
     @GetMapping("/upload")
     public String showUploadForm(Model model) {
         model.addAttribute("file", new File());
         return "upload";
     }
-    
+
     @PostMapping("/upload")
-    public String handleFileUpload(@RequestParam("file") MultipartFile file,
+    public String handleFileUpload(@RequestParam("file") MultipartFile[] files,
                                    @RequestParam(value = "folderId", required = false) Long folderId,
                                    @AuthenticationPrincipal UserDetails currentUser,
                                    RedirectAttributes redirectAttributes) {
 
         User uploader = userRepository.findByUsername(currentUser.getUsername());
-        String fileName = fileStorageService.storeFile(file);
-
-        File newFile = new File();
-        newFile.setFileName(fileName);
-        newFile.setFileType(file.getContentType());
-        newFile.setFileSize(file.getSize());
-        newFile.setFilePath("./uploads/" + fileName);
-        newFile.setUploader(uploader);
+        Folder parentFolder = null;
 
         if (folderId != null) {
-            Folder parentFolder = folderRepository.findById(folderId)
+            parentFolder = folderRepository.findById(folderId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Folder not found"));
             if (!parentFolder.getUser().equals(uploader)) {
                 throw new SecurityException("User does not have permission to upload to this folder.");
             }
-            newFile.setFolder(parentFolder);
         }
 
-        fileRepository.save(newFile);
+        int successCount = 0;
 
-        redirectAttributes.addFlashAttribute("message", "File uploaded successfully!");
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) {
+                continue;
+            }
+
+            String fileName = fileStorageService.storeFile(file);
+
+            File newFile = new File();
+            newFile.setFileName(fileName);
+            newFile.setFileType(file.getContentType());
+            newFile.setFileSize(file.getSize());
+            newFile.setFilePath("./uploads/" + fileName);
+            newFile.setUploader(uploader);
+
+            if (parentFolder != null) {
+                newFile.setFolder(parentFolder);
+            }
+
+            fileRepository.save(newFile);
+            successCount++;
+        }
+
+        if (successCount > 0) {
+            redirectAttributes.addFlashAttribute("message", successCount + " file(s) uploaded successfully!");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "No files were uploaded. Please select at least one file.");
+        }
+
         return "redirect:/files/dashboard" + (folderId != null ? "?folderId=" + folderId : "");
     }
 
@@ -174,7 +206,8 @@ public class FileController {
     @GetMapping("/dashboard")
     public String showDashboard(@RequestParam(value = "folderId", required = false) Long folderId,
                                 Model model,
-                                @AuthenticationPrincipal UserDetails currentUser) {
+                                @AuthenticationPrincipal UserDetails currentUser,
+                                HttpSession session) {
         String username = currentUser.getUsername();
         User user = userRepository.findByUsername(username);
 
@@ -185,6 +218,19 @@ public class FileController {
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Folder not found"));
             if (!currentFolder.getUser().equals(user)) {
                 throw new SecurityException("User does not have permission to access this folder.");
+            }
+
+            // Check if folder is password protected
+            if (currentFolder.getPassword() != null && !currentFolder.getPassword().isEmpty()) {
+                // Check if user has already entered the correct password
+                String unlockStatus = (String) session.getAttribute("folder_" + folderId + "_unlocked");
+
+                if (!"true".equals(unlockStatus)) {
+                    // User hasn't entered password yet, show password form
+                    model.addAttribute("passwordProtectedFolder", currentFolder);
+                    model.addAttribute("parentFolder", currentFolder.getParent());
+                    return "folder_password";
+                }
             }
         }
 
@@ -205,8 +251,9 @@ public class FileController {
     public String createFolder(@RequestParam String folderName,
                                @RequestParam(value = "parentId", required = false) Long parentId,
                                @AuthenticationPrincipal UserDetails currentUser,
+                               @RequestParam(value = "password", required = false) String password,
                                RedirectAttributes redirectAttributes) {
-        folderService.createFolder(folderName, parentId, currentUser.getUsername());
+        folderService.createFolder(folderName, parentId, currentUser.getUsername(),password);
         redirectAttributes.addFlashAttribute("message", "Folder '" + folderName + "' created successfully.");
         return "redirect:/files/dashboard" + (parentId != null ? "?folderId=" + parentId : "");
     }
@@ -221,8 +268,109 @@ public class FileController {
         model.addAttribute("receivedFiles",receivedFiles );
 
         return "fileList";
-
-
     }
-   
+
+    @PostMapping("/download-multiple")
+    public ResponseEntity<Resource> downloadMultipleFiles(@RequestParam("fileIds") List<Long> fileIds,
+                                                         @AuthenticationPrincipal UserDetails currentUser) throws IOException {
+        User user = userRepository.findByUsername(currentUser.getUsername());
+
+        if (fileIds == null || fileIds.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No files selected for download");
+        }
+
+        // If only one file is selected, redirect to the single file download endpoint
+        if (fileIds.size() == 1) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .header(HttpHeaders.LOCATION, "/files/download/" + fileIds.get(0))
+                    .build();
+        }
+
+        // Create a temporary zip file
+        Path tempFile = Files.createTempFile("download_", ".zip");
+
+        try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(tempFile.toFile()))) {
+            for (Long fileId : fileIds) {
+                File file = fileRepository.findById(fileId)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found: " + fileId));
+
+                // Check if user has permission to download this file
+                if (!file.getRecipients().contains(user) && !file.getUploader().equals(user)) {
+                    continue; // Skip files the user doesn't have permission to download
+                }
+
+                Resource resource = fileStorageService.loadFileAsResource(file.getFileName());
+
+                // Add file to zip
+                ZipEntry zipEntry = new ZipEntry(file.getFileName());
+                zipOut.putNextEntry(zipEntry);
+
+                byte[] bytes = Files.readAllBytes(resource.getFile().toPath());
+                zipOut.write(bytes, 0, bytes.length);
+                zipOut.closeEntry();
+            }
+        }
+
+        // Create a resource from the zip file
+        Resource zipResource = new UrlResource(tempFile.toUri());
+
+        // Set up the response
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"files.zip\"")
+                .header(HttpHeaders.CONTENT_TYPE, "application/zip")
+                .body(zipResource);
+    }
+
+    @PostMapping("/folders/password")
+    public String setFolderPassword(@RequestParam Long folderId,
+                                   @RequestParam String password,
+                                   @AuthenticationPrincipal UserDetails currentUser,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            folderService.setFolderPassword(folderId, password, currentUser.getUsername());
+            redirectAttributes.addFlashAttribute("message", "Folder password set successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        Folder folder = folderRepository.findById(folderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Folder not found"));
+
+        Long parentId = folder.getParent() != null ? folder.getParent().getId() : null;
+        return "redirect:/files/dashboard" + (parentId != null ? "?folderId=" + parentId : "");
+    }
+
+    @PostMapping("/folders/verify-password")
+    public String verifyFolderPassword(@RequestParam Long folderId,
+                                      @RequestParam String password,
+                                      RedirectAttributes redirectAttributes,
+                                      HttpSession session) {
+        boolean isValid = folderService.verifyFolderPassword(folderId, password);
+
+        if (isValid) {
+            // Store in session that this folder has been unlocked
+            session.setAttribute("folder_" + folderId + "_unlocked", "true");
+            return "redirect:/files/dashboard?folderId=" + folderId;
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Invalid password");
+            return "redirect:/files/dashboard";
+        }
+    }
+
+    @PostMapping("/folders/verify-password-ajax")
+    @ResponseBody
+    public ResponseEntity<?> verifyFolderPasswordAjax(@RequestParam Long folderId,
+                                                     @RequestParam String password,
+                                                     HttpSession session) {
+        boolean isValid = folderService.verifyFolderPassword(folderId, password);
+
+        if (isValid) {
+            // Store in session that this folder has been unlocked
+            session.setAttribute("folder_" + folderId + "_unlocked", "true");
+            return ResponseEntity.ok().body(Map.of("success", true, "redirectUrl", "/files/dashboard?folderId=" + folderId));
+        } else {
+            return ResponseEntity.ok().body(Map.of("success", false, "error", "Invalid password"));
+        }
+    }
+
 }

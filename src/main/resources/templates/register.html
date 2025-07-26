@@ -1,48 +1,96 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Registration</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register</title>
     <script src="https://cdn.tailwindcss.com"></script>
-     <link  rel="stylesheet" th:href="@{/css/main.css}">
-</head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-<div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold text-center text-gray-900">Create a new account</h2>
-    <form th:action="@{/register}" method="post" class="space-y-6">
-        <div>
-            <label for="username" class="text-sm font-medium text-gray-700">Username</label>
-            <input type="text" id="username" name="username" required
-                   class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-        </div>
-        <div>
-            <label for="password" class="text-sm font-medium text-gray-700">Password</label>
-            <input type="password" id="password" name="password" required
-                   class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-        </div>
-        <div>
-            <label for="email" class="text-sm font-medium text-gray-700">Password</label>
-            <input type="email" id="email" name="email" required
-                   class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-        </div>
-        <div>
-            <button type="submit"
-                    class="w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Register
-            </button>
-        </div>
-        <div class="text-center">
-            <a href="/login" class="text-sm text-indigo-600 hover:underline">Already have an account? Login</a>
-        </div>
-    </form>
+    <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" th:href="@{/css/input.css}" />
+    <script
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+      defer
+    ></script>
+  </head>
+  <body class="bg-gray-100">
+    <nav th:replace="~{ Fragments/header :: nav-1}"></nav>
+    <div class="flex items-center justify-center h-screen">
+      <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold text-center text-gray-900">
+          Create a new account
+        </h2>
+        <form th:action="@{/register}" method="post" class="space-y-6">
+          <div>
+            <label for="username" class="text-sm font-medium text-gray-700"
+              >Username</label
+            >
+            <input
+              type="text"
+              id="username"
+              name="username"
+              required
+              class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          <div>
+            <label for="email" class="text-sm font-medium text-gray-700"
+            >Email</label
+            >
+            <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          <div>
+            <label for="password" class="text-sm font-medium text-gray-700"
+              >Password</label
+            >
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
 
-    <div th:if="${success}" class="p-4 mt-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
-        <p th:text="${success}"></p>
+          <div>
+            <button
+              type="submit"
+              class="w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Register
+            </button>
+          </div>
+          <div class="text-center">
+            <a href="/login" class="text-sm text-indigo-600 hover:underline"
+              >Already have an account? Login</a
+            >
+          </div>
+        </form>
+
+        <div
+          th:if="${success}"
+          class="p-4 mt-4 text-sm text-green-700 bg-green-100 rounded-lg"
+          role="alert"
+        >
+          <p th:text="${success}"></p>
+        </div>
+        <div
+          th:if="${error}"
+          class="p-4 mt-4 text-sm text-red-700 bg-red-100 rounded-lg"
+          role="alert"
+        >
+          <p th:text="${error}"></p>
+        </div>
+      </div>
     </div>
-    <div th:if="${error}" class="p-4 mt-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
-        <p th:text="${error}"></p>
-    </div>
-</div>
-</body>
+  </body>
 </html>

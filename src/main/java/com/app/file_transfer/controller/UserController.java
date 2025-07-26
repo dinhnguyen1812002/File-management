@@ -26,7 +26,7 @@ public class UserController {
     
     @Autowired
     private FileStorageService fileStorageService;
-@GetMapping("/login")
+    @GetMapping("/login")
     public String Login(){
     return "login";
 }

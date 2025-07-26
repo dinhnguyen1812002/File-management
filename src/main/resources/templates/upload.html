@@ -1,53 +1,360 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload File</title>
+    <title>Enhanced Upload Modal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+    <style>
+        .drag-over {
+            @apply border-indigo-500 bg-indigo-50;
+        }
+        .file-preview-item {
+            transition: all 0.3s ease;
+        }
+        .file-preview-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .upload-progress {
+            transition: width 0.3s ease;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 p-8">
 
-<!-- Navbar -->
-<nav th:replace="~{home :: nav}"></nav>
+<!-- Demo Button -->
+<div class="text-center mb-8">
+    <button onclick="showUploadModal()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
+        Open Upload Modal
+    </button>
+</div>
 
-<!-- Main Content -->
-<div class="py-10">
-    <header>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 class="text-3xl font-bold leading-tight text-gray-900">
-                Upload a New File
-            </h1>
+<!-- Enhanced Upload File Modal -->
+<div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-cloud-upload-alt text-indigo-600 text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-900">Upload Files</h3>
+                    <p class="text-sm text-gray-500">Select or drag files to upload</p>
+                </div>
+            </div>
+            <button onclick="hideUploadModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
         </div>
-    </header>
-    <main>
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="mt-8">
-                <div class="w-full max-w-lg p-8 space-y-6 bg-white rounded-lg shadow-md">
-                    <form method="post" enctype="multipart/form-data" th:action="@{/files/upload}" class="space-y-4">
-                        <div>
-                            <label for="file" class="block text-sm font-medium text-gray-700">Select file</label>
-                            <input type="file" name="file" id="file" class="mt-1 block w-full text-sm text-gray-500
-                                file:mr-4 file:py-2 file:px-4
-                                file:rounded-full file:border-0
-                                file:text-sm file:font-semibold
-                                file:bg-indigo-50 file:text-indigo-700
-                                hover:file:bg-indigo-100"/>
+
+        <!-- Modal Body -->
+        <div class="p-6">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="hidden" name="folderId" value="">
+
+                <!-- Drag & Drop Area -->
+                <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-400 transition-colors cursor-pointer bg-gray-50 hover:bg-gray-100">
+                    <div class="space-y-4">
+                        <div class="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-cloud-upload-alt text-indigo-600 text-2xl"></i>
                         </div>
                         <div>
-                            <button type="submit" class="w-full px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Upload
-                            </button>
+                            <h4 class="text-lg font-medium text-gray-900">Drop files here to upload</h4>
+                            <p class="text-gray-500 mt-1">or click to browse files</p>
                         </div>
-                    </form>
-                    <div th:if="${message}" class="p-4 mt-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
-                        <p th:text="${message}"></p>
+                        <div class="flex items-center justify-center space-x-4 text-sm text-gray-400">
+                            <span>Supports: Images, Documents, Videos, Audio</span>
+                            <span>•</span>
+                            <span>Max size: 100MB per file</span>
+                        </div>
+                        <input type="file" id="fileInput" name="files" multiple class="hidden">
                     </div>
+                </div>
+
+                <!-- Selected Files Preview -->
+                <div id="filePreview" class="mt-6 hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-medium text-gray-900">Selected Files</h4>
+                        <button type="button" onclick="clearAllFiles()" class="text-sm text-red-600 hover:text-red-700 transition-colors">
+                            Clear All
+                        </button>
+                    </div>
+                    <div id="fileList" class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
+                        <!-- File items will be inserted here -->
+                    </div>
+
+                    <!-- Upload Summary -->
+                    <div id="uploadSummary" class="mt-4 p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">Total files: <span id="totalFiles" class="font-medium">0</span></span>
+                            <span class="text-gray-600">Total size: <span id="totalSize" class="font-medium">0 MB</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Progress -->
+                <div id="uploadProgress" class="mt-6 hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700">Uploading files...</span>
+                        <span class="text-sm text-gray-500" id="progressPercent">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="bg-indigo-600 h-2 rounded-full upload-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                    <button type="button" onclick="hideUploadModal()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="button" id="uploadBtn" onclick="uploadFiles()" disabled class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                        Upload Files
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Scrollbar Styles -->
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
+
+<script>
+    let selectedFiles = [];
+
+    // File type icons mapping
+    const fileIcons = {
+        'image': 'fas fa-image text-green-500',
+        'video': 'fas fa-video text-red-500',
+        'audio': 'fas fa-music text-purple-500',
+        'pdf': 'fas fa-file-pdf text-red-600',
+        'doc': 'fas fa-file-word text-blue-600',
+        'xls': 'fas fa-file-excel text-green-600',
+        'ppt': 'fas fa-file-powerpoint text-orange-600',
+        'zip': 'fas fa-file-archive text-yellow-600',
+        'txt': 'fas fa-file-alt text-gray-600',
+        'default': 'fas fa-file text-gray-500'
+    };
+
+    function showUploadModal() {
+        document.getElementById('uploadModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hideUploadModal() {
+        document.getElementById('uploadModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        clearAllFiles();
+    }
+
+    function getFileIcon(fileName) {
+        const extension = fileName.split('.').pop().toLowerCase();
+
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(extension)) {
+            return fileIcons.image;
+        } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(extension)) {
+            return fileIcons.video;
+        } else if (['mp3', 'wav', 'flac', 'aac', 'ogg'].includes(extension)) {
+            return fileIcons.audio;
+        } else if (extension === 'pdf') {
+            return fileIcons.pdf;
+        } else if (['doc', 'docx'].includes(extension)) {
+            return fileIcons.doc;
+        } else if (['xls', 'xlsx'].includes(extension)) {
+            return fileIcons.xls;
+        } else if (['ppt', 'pptx'].includes(extension)) {
+            return fileIcons.ppt;
+        } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) {
+            return fileIcons.zip;
+        } else if (['txt', 'md', 'log'].includes(extension)) {
+            return fileIcons.txt;
+        }
+        return fileIcons.default;
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function addFiles(files) {
+        Array.from(files).forEach(file => {
+            // Check file size (100MB limit)
+            if (file.size > 100 * 1024 * 1024) {
+                alert(`File "${file.name}" is too large. Maximum size is 100MB.`);
+                return;
+            }
+
+            // Check if file already exists
+            if (selectedFiles.find(f => f.name === file.name && f.size === file.size)) {
+                return;
+            }
+
+            selectedFiles.push(file);
+        });
+
+        updateFilePreview();
+        updateUploadButton();
+    }
+
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        updateFilePreview();
+        updateUploadButton();
+    }
+
+    function clearAllFiles() {
+        selectedFiles = [];
+        updateFilePreview();
+        updateUploadButton();
+    }
+
+    function updateFilePreview() {
+        const filePreview = document.getElementById('filePreview');
+        const fileList = document.getElementById('fileList');
+
+        if (selectedFiles.length === 0) {
+            filePreview.classList.add('hidden');
+            return;
+        }
+
+        filePreview.classList.remove('hidden');
+
+        fileList.innerHTML = selectedFiles.map((file, index) => `
+        <div class="file-preview-item bg-white border border-gray-200 rounded-lg p-4 flex items-center space-x-4">
+            <div class="flex-shrink-0">
+                <i class="${getFileIcon(file.name)} text-2xl"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                    <h5 class="text-sm font-medium text-gray-900 truncate">${file.name}</h5>
+                    <button type="button" onclick="removeFile(${index})" class="ml-2 text-red-500 hover:text-red-700 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="flex items-center space-x-4 mt-1">
+                    <span class="text-xs text-gray-500">${formatFileSize(file.size)}</span>
+                    <span class="text-xs text-gray-500">${file.type || 'Unknown type'}</span>
                 </div>
             </div>
         </div>
-    </main>
-</div>
+    `).join('');
+
+        // Update summary
+        const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+        document.getElementById('totalFiles').textContent = selectedFiles.length;
+        document.getElementById('totalSize').textContent = formatFileSize(totalSize);
+    }
+
+    function updateUploadButton() {
+        const uploadBtn = document.getElementById('uploadBtn');
+        uploadBtn.disabled = selectedFiles.length === 0;
+        uploadBtn.textContent = selectedFiles.length > 0 ? `Upload ${selectedFiles.length} File${selectedFiles.length > 1 ? 's' : ''}` : 'Upload Files';
+    }
+
+    function uploadFiles() {
+        if (selectedFiles.length === 0) return;
+
+        const uploadProgress = document.getElementById('uploadProgress');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        uploadProgress.classList.remove('hidden');
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Uploading...';
+
+        // Simulate upload progress
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 100) progress = 100;
+
+            progressBar.style.width = progress + '%';
+            progressPercent.textContent = Math.round(progress) + '%';
+
+            if (progress >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    alert('Files uploaded successfully!');
+                    hideUploadModal();
+                }, 500);
+            }
+        }, 200);
+
+        // In real implementation, you would use FormData and fetch/XMLHttpRequest
+        // const formData = new FormData();
+        // selectedFiles.forEach(file => formData.append('files', file));
+        //
+        // fetch('/files/upload', {
+        //     method: 'POST',
+        //     body: formData
+        // }).then(response => {
+        //     // Handle response
+        // });
+    }
+
+    // Drag and drop functionality
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+
+        const files = e.dataTransfer.files;
+        addFiles(files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        addFiles(e.target.files);
+    });
+
+    // Prevent default drag behaviors on document
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        document.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+</script>
 
 </body>
 </html>

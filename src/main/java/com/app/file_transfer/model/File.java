@@ -23,6 +23,7 @@ public class File {
     private String filePath;
     private String fileType;
     private long fileSize;
+    private String password; // Thêm trường mật khẩu
 
     @ManyToOne
     @JoinColumn(name = "uploader_id")

@@ -10,9 +10,12 @@
      <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
      <link  rel="stylesheet" th:href="@{/css/input.css}">
-     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+    <style>
+        
+    </style>
 </head>
-<body class="bg-gray-50" x-data="{ showCreateFolderModal: false, showUploadModal: false }">
+<body class="bg-gray-50" x-data="dashboard">
 
 <!-- Navbar -->
 <!-- <nav class="bg-white shadow-md">
@@ -21,7 +24,7 @@
             <div class="flex">
                 <div class="flex-shrink-0 flex items-center">
                     <a href="/files/dashboard" class="text-2xl font-bold text-indigo-600">FileTransfer</a>
-                     
+
                 </div>
 
                 <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -62,6 +65,7 @@
             </div>
         </div>
 
+
         <!-- Breadcrumb Navigation -->
         <div class="mt-4 mb-6">
             <nav class="flex" aria-label="Breadcrumb">
@@ -94,7 +98,38 @@
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Folders</h3>
                 <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                     <div th:each="folder : ${subFolders}" class="relative group">
-                        <a th:href="@{/files/dashboard(folderId=${folder.id})}" class="block">
+                        <div th:if="${folder.password != null and !folder.password.isEmpty()}" 
+                             th:data-folder-id="${folder.id}"
+                             th:data-folder-name="${folder.name}"
+                             th:data-has-password="true"
+                             @click="handleFolderClick($event.target.closest('[data-folder-id]').dataset.folderId, $event.target.closest('[data-folder-id]').dataset.folderName, $event.target.closest('[data-folder-id]').dataset.hasPassword === 'true')"
+                             class="block cursor-pointer">
+                            <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-all duration-200">
+                                <div class="relative">
+                                    <!-- Folder Icon with hover effect -->
+                                    <svg class="w-16 h-16 text-indigo-400 group-hover:text-indigo-500 transition-colors duration-200" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M19.5 21a3 3 0 003-3V9a3 3 0 00-3-3h-5.379a.75.75 0 01-.53-.22L11.47 3.66A2.25 2.25 0 009.879 3H4.5a3 3 0 00-3 3v12a3 3 0 003 3h15z" />
+                                    </svg>
+                                    <!-- Folder count badge -->
+                                    <span th:if="${not #lists.isEmpty(folder.subFolders) or not #lists.isEmpty(folder.files)}"
+                                          class="absolute -top-1 -right-1 bg-indigo-100 text-indigo-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                                        <span th:text="${#lists.size(folder.subFolders) + #lists.size(folder.files)}"></span>
+                                    </span>
+                                    <!-- Password indicator -->
+                                    <span class="absolute -top-1 -left-1 bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded-full"
+                                          title="Password protected">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="mt-2 text-center">
+                                    <h3 class="text-sm font-medium text-gray-900 truncate max-w-[120px]" th:text="${folder.name}"></h3>
+                                    <p class="text-xs text-gray-500 mt-1" th:text="${#temporals.format(folder.createdAt, 'dd MMM yyyy')}"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <a th:if="${folder.password == null or folder.password.isEmpty()}" th:href="@{/files/dashboard(folderId=${folder.id})}" class="block">
                             <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-all duration-200">
                                 <div class="relative">
                                     <!-- Folder Icon with hover effect -->
@@ -113,83 +148,110 @@
                                 </div>
                             </div>
                         </a>
+                        <!-- Folder actions -->
+                        <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                                    type="button"
+                                    class="p-1 bg-white rounded-full shadow-sm text-gray-500 hover:text-indigo-600"
+                                    data-folder-id="[[${folder.id}]]"
+                                    onclick="handlePasswordClick(this)">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Files Section -->
             <div th:if="${not #lists.isEmpty(files)}">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Files</h3>
-                <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
-                    <ul role="list" class="divide-y divide-gray-200">
-                        <li th:each="file : ${files}" class="group hover:bg-gray-50">
-                            <div class="flex items-center px-4 py-4 sm:px-6">
-                                <!-- File Type Icon -->
-                                <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                                    <!-- Document icon for text files -->
-                                    <svg th:if="${#strings.startsWith(file.fileType, 'text') or #strings.contains(file.fileType, 'document')}"
-                                         class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                                    </svg>
-                                    <!-- Image icon for images -->
-                                    <svg th:if="${#strings.startsWith(file.fileType, 'image')}"
-                                         class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                                    </svg>
-                                    <!-- Video icon for videos -->
-                                    <svg th:if="${#strings.startsWith(file.fileType, 'video')}"
-                                         class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
-                                    </svg>
-                                    <!-- Audio icon for audio -->
-                                    <svg th:if="${#strings.startsWith(file.fileType, 'audio')}"
-                                         class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
-                                    </svg>
-                                    <!-- Default file icon for other types -->
-                                    <svg th:unless="${#strings.startsWith(file.fileType, 'text') or #strings.contains(file.fileType, 'document') or #strings.startsWith(file.fileType, 'image') or #strings.startsWith(file.fileType, 'video') or #strings.startsWith(file.fileType, 'audio')}"
-                                         class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V7.5h-9z" />
-                                    </svg>
-                                </div>
-                                
-                                <!-- File Info -->
-                                <div class="ml-4 flex-1 min-w-0">
-                                    <div class="flex items-center justify-between">
-                                        <p class="text-sm font-medium text-indigo-600 truncate" th:text="${file.fileName}"></p>
-                                        <div class="ml-2 flex-shrink-0 flex">
-                                            <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
-                                               th:text="${#numbers.formatDecimal(file.fileSize / 1024.0, 1, 2)} + ' KB'"></p>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Files</h3>
+                    <button id="downloadSelectedBtn" 
+                            class="hidden px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700"
+                            onclick="downloadSelectedFiles()">
+                        Download Selected
+                    </button>
+                </div>
+                <form id="multipleDownloadForm" action="/files/download-multiple" method="post">
+                    <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
+                        <ul role="list" class="divide-y divide-gray-200">
+                            <li th:each="file : ${files}" class="group hover:bg-gray-50">
+                                <div class="flex items-center px-4 py-4 sm:px-6">
+                                    <!-- Checkbox for selecting files -->
+                                    <div class="flex-shrink-0 mr-4">
+                                        <input type="checkbox" name="fileIds" th:value="${file.id}" 
+                                               class="file-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                                               onchange="updateDownloadButton()">
+                                    </div>
+                                    <!-- File Type Icon -->
+                                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                                        <!-- Document icon for text files -->
+                                        <svg th:if="${#strings.startsWith(file.fileType, 'text') or #strings.contains(file.fileType, 'document')}"
+                                             class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                        </svg>
+                                        <!-- Image icon for images -->
+                                        <svg th:if="${#strings.startsWith(file.fileType, 'image')}"
+                                             class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                        </svg>
+                                        <!-- Video icon for videos -->
+                                        <svg th:if="${#strings.startsWith(file.fileType, 'video')}"
+                                             class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                                        </svg>
+                                        <!-- Audio icon for audio -->
+                                        <svg th:if="${#strings.startsWith(file.fileType, 'audio')}"
+                                             class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+                                        </svg>
+                                        <!-- Default file icon for other types -->
+                                        <svg th:unless="${#strings.startsWith(file.fileType, 'text') or #strings.contains(file.fileType, 'document') or #strings.startsWith(file.fileType, 'image') or #strings.startsWith(file.fileType, 'video') or #strings.startsWith(file.fileType, 'audio')}"
+                                             class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V7.5h-9z" />
+                                        </svg>
+                                    </div>
+
+                                    <!-- File Info -->
+                                    <div class="ml-4 flex-1 min-w-0">
+                                        <div class="flex items-center justify-between">
+                                            <p class="text-sm font-medium text-indigo-600 truncate" th:text="${file.fileName}"></p>
+                                            <div class="ml-2 flex-shrink-0 flex">
+                                                <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+                                                   th:text="${#numbers.formatDecimal(file.fileSize / 1024.0, 1, 2)} + ' KB'"></p>
+                                            </div>
+                                        </div>
+                                        <div class="mt-1 flex items-center text-xs text-gray-500">
+                                            <span class="truncate" th:text="${file.fileType}"></span>
                                         </div>
                                     </div>
-                                    <div class="mt-1 flex items-center text-xs text-gray-500">
-                                        <span class="truncate" th:text="${file.fileType}"></span>
+
+                                    <!-- Actions -->
+                                    <div class="ml-4 flex-shrink-0 flex space-x-2">
+                                        <a th:href="@{/files/download/{id}(id=${file.id})}"
+                                           class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                            <svg class="mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                            </svg>
+                                            Download
+                                        </a>
+                                        <button type="button"
+                                            class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
+                                            data-file-id="[[${file.id}]]"
+                                            data-file-name="[[${file.fileName}]]"
+                                            onclick="handleShareClick(this)">
+                                            Share
+                                        </button>
                                     </div>
                                 </div>
-                                
-                                <!-- Actions -->
-                                <div class="ml-4 flex-shrink-0 flex space-x-2">
-                                    <a th:href="@{/files/download/{id}(id=${file.id})}"
-                                       class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        <svg class="mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                                        </svg>
-                                        Download
-                                    </a>
-                                    <a th:href="@{/files/send/{id}(id=${file.id})}"
-                                       class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                        <svg class="mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 0m-3.935 0l-9.566-5.314m9.566-4.314a2.25 2.25 0 10-3.935 0m3.935 0l-9.566 5.314" />
-                                        </svg>
-                                        Share
-                                    </a>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </form>
             </div>
-            
+
             <!-- Empty State -->
             <div th:if="${#lists.isEmpty(subFolders) and #lists.isEmpty(files)}" class="text-center py-12">
                 <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -223,14 +285,18 @@
         <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
             <div @click.away="showCreateFolderModal = false" class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
                 <h3 class="text-lg font-medium leading-6 text-gray-900">Create New Folder</h3>
-                <form th:action="@{/files/folders/create}" method="post" class="mt-4">
+                <form th:action="@{/files/folders/create}" method="post" class="mt-4 space-y-4" >
                     <input type="hidden" name="parentId" th:value="${currentFolder?.id}">
                     <div>
-                        <label for="folderName" class="sr-only">Folder Name</label>
+                        <label for="folderName" class="sr-only block text-sm font-medium text-gray-700">Folder Name</label>
                         <input type="text" name="folderName" id="folderName" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Enter folder name" required>
                     </div>
+                    <div>
+                        <label for="password" class="sr-only block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" name="password" id="password" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Enter password (optional)">
+                    </div>
                     <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
-                        <button type="submit" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:col-start-2">Create</button>
+                        <button type="submit" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:col-start-2">Create</button>
                         <button @click="showCreateFolderModal = false" type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">Cancel</button>
                     </div>
                 </form>
@@ -239,21 +305,115 @@
     </div>
 </div>
 
-<!-- Upload File Modal -->
+<!-- Enhanced Upload File Modal -->
 <div x-show="showUploadModal" class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none;">
     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
     <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
         <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-            <div @click.away="showUploadModal = false" class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
-                <h3 class="text-lg font-medium leading-6 text-gray-900">Upload File</h3>
-                <form th:action="@{/files/upload}" method="post" enctype="multipart/form-data" class="mt-4">
-                    <input type="hidden" name="folderId" th:value="${currentFolder?.id}">
+            <div @click.away="showUploadModal = false" class="relative transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:p-0">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-cloud-upload-alt text-indigo-600 text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900">Upload Files</h3>
+                            <p class="text-sm text-gray-500">Select or drag files to upload</p>
+                        </div>
+                    </div>
+                    <button @click="showUploadModal = false" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="uploadForm" th:action="@{/files/upload}" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="folderId" th:value="${currentFolder?.id}">
+
+                        <!-- Drag & Drop Area -->
+                        <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-400 transition-colors cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <div class="space-y-4">
+                                <div class="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-cloud-upload-alt text-indigo-600 text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-medium text-gray-900">Drop files here to upload</h4>
+                                    <p class="text-gray-500 mt-1">or click to browse files</p>
+                                </div>
+                                <div class="flex items-center justify-center space-x-4 text-sm text-gray-400">
+                                    <span>Supports: Images, Documents, Videos, Audio</span>
+                                    <span>•</span>
+                                    <span>Max size: 100MB per file</span>
+                                </div>
+                                <input type="file" id="fileInput" name="file" multiple class="hidden">
+                            </div>
+                        </div>
+
+                        <!-- Selected Files Preview -->
+                        <div id="filePreview" class="mt-6 hidden">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-lg font-medium text-gray-900">Selected Files</h4>
+                                <button type="button" @click="clearAllFiles()" class="text-sm text-red-600 hover:text-red-700 transition-colors">
+                                    Clear All
+                                </button>
+                            </div>
+                            <div id="fileList" class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
+                                <!-- File items will be inserted here -->
+                            </div>
+
+                            <!-- Upload Summary -->
+                            <div id="uploadSummary" class="mt-4 p-4 bg-gray-50 rounded-lg">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-600">Total files: <span id="totalFiles" class="font-medium">0</span></span>
+                                    <span class="text-gray-600">Total size: <span id="totalSize" class="font-medium">0 MB</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upload Progress -->
+                        <div id="uploadProgress" class="mt-6 hidden">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">Uploading files...</span>
+                                <span class="text-sm text-gray-500" id="progressPercent">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="progressBar" class="bg-indigo-600 h-2 rounded-full upload-progress" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                            <button type="button" @click="showUploadModal = false" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                                Cancel
+                            </button>
+                            <button type="button" id="uploadBtn" @click="uploadFiles()" disabled class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                                Upload Files
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Set Folder Password Modal -->
+<div x-show="showPasswordModal" class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none;"  >
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div @click.away="showPasswordModal = false" class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">Set Folder Password</h3>
+                <form th:action="@{/files/folders/password}" method="post" class="mt-4">
+                    <input type="hidden" name="folderId" id="passwordFolderId">
                     <div>
-                        <input type="file" name="file" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" name="password" id="password" required class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
                     </div>
                     <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
-                        <button type="submit" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:col-start-2">Upload</button>
-                        <button @click="showUploadModal = false" type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">Cancel</button>
+                        <button type="submit" class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:col-start-2">Set Password</button>
+                        <button @click="showPasswordModal = false" type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -261,8 +421,101 @@
     </div>
 </div>
 
+<!-- Folder Password Verification Modal -->
+<div x-show="showPasswordVerificationModal" class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none;">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div @click.away="showPasswordVerificationModal = false" class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                <div class="text-center mb-6">
+                    <svg class="mx-auto h-16 w-16 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
+                    <h3 class="mt-4 text-xl font-semibold text-gray-900">Password Protected Folder</h3>
+                    <p class="mt-2 text-sm text-gray-600">
+                        The folder "<span x-text="passwordVerificationData.folderName" class="font-semibold"></span>" is password protected.
+                        Please enter the password to access its contents.
+                    </p>
+                </div>
+
+                <div x-show="passwordVerificationData.error" x-text="passwordVerificationData.error" class="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert"></div>
+
+                <form @submit.prevent="verifyPassword()" class="space-y-6">
+                    <input type="hidden" x-model="passwordVerificationData.folderId">
+                    
+                    <div>
+                        <label for="verificationPassword" class="block text-sm font-medium text-gray-700">Password</label>
+                        <div class="mt-1">
+                            <input x-model="passwordVerificationData.password" type="password"
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                   placeholder="Enter password">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <button type="button" @click="showPasswordVerificationModal = false" 
+                               class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share File Modal -->
+<div x-show="showShareModel" class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none;">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div @click.away="showShareModel = false"
+                 class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+
+                <div class="w-full max-w-lg p-6 space-y-6 bg-white rounded-lg shadow-md">
+                    <h3 class="text-lg font-medium text-gray-900">Share File</h3>
+                    <p class="text-sm text-gray-600">
+                        You are sharing file: 
+                        <span class="font-semibold text-gray-800" x-text="selectedFile.fileName"></span>
+                    </p>
+
+                    <form id="shareForm" method="post">
+                        <input type="hidden" name="fileId" id="fileIdInput">
+
+                        <div>
+                            <label for="recipientId" class="block text-sm font-medium text-gray-700">Select recipient</label>
+                            <select name="recipientId" id="recipientId" required
+                                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option disabled selected value="">-- Choose user --</option>
+                                <option th:each="user : ${users}" th:value="${user.id}" th:text="${user.username}"></option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <button type="submit"
+                                    class="w-full mt-4 px-4 py-2 font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                Send File
+                            </button>
+                        </div>
+                    </form>
+
+                    <div th:if="${message}" class="p-4 mt-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
+                        <p th:text="${message}"></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <script th:src="@{/js/script.js}"></script>
-    
+<script th:src="@{/js/dashboard.js}"></script>
+<script th:src="@{/js/alpine-dashboard.js}"></script>
 </body>
 </html>

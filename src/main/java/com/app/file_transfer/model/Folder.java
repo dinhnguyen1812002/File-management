@@ -23,6 +23,7 @@ public class Folder {
     private Long id;
 
     private String name;
+    private String password; // Thêm trường mật khẩu
 
     @CreationTimestamp
     private LocalDateTime createdAt;

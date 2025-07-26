@@ -5,6 +5,7 @@ import com.app.file_transfer.model.User;
 import com.app.file_transfer.repository.FolderRepository;
 import com.app.file_transfer.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +22,10 @@ public class FolderService {
     @Autowired
     private UserRepository userRepository;
 
-    public Folder createFolder(String name, Long parentId, String username) {
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public Folder createFolder(String name, Long parentId, String username, String password) {
         User user = userRepository.findByUsername(username);
         Folder parentFolder = null;
         if (parentId != null) {
@@ -36,6 +40,7 @@ public class FolderService {
         Folder newFolder = new Folder();
         newFolder.setName(name);
         newFolder.setUser(user);
+        newFolder.setPassword(passwordEncoder.encode(password));
         newFolder.setParent(parentFolder);
         return folderRepository.save(newFolder);
     }
@@ -50,5 +55,31 @@ public class FolderService {
         }
 
         return folderRepository.findByUserAndParent(user, parentFolder);
+    }
+
+    // Set or update password for a folder
+    public void setFolderPassword(Long folderId, String password, String username) {
+        Folder folder = folderRepository.findById(folderId)
+                .orElseThrow(() -> new IllegalArgumentException("Folder not found"));
+        User user = userRepository.findByUsername(username);
+
+        if (!folder.getUser().equals(user)) {
+            throw new SecurityException("User does not have permission to set password for this folder.");
+        }
+
+        folder.setPassword(passwordEncoder.encode(password));
+        folderRepository.save(folder);
+    }
+
+    // Verify folder password
+    public boolean verifyFolderPassword(Long folderId, String password) {
+        Folder folder = folderRepository.findById(folderId)
+                .orElseThrow(() -> new IllegalArgumentException("Folder not found"));
+
+        if (folder.getPassword() == null || folder.getPassword().isEmpty()) {
+            return true; // No password set
+        }
+
+        return passwordEncoder.matches(password, folder.getPassword());
     }
 }

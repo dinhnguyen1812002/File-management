@@ -5,14 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
- <link  rel="stylesheet" th:href="@{/css/main.css}">
-
+    <link  rel="stylesheet" th:href="@{/css/main.css}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+     <link  rel="stylesheet" th:href="@{/css/input.css}">
+     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
+<body class="bg-gray-100">
 
- <th:block th:replace= "~{ Fragments/header :: header}" ></th:block>
-<div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+<nav th:replace= "~{ Fragments/header :: nav-1}" > </nav>
+<div class=" flex items-center justify-center h-screen">
+<div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md ">
     <h2 class="text-2xl font-bold text-center text-gray-900">Login to your account</h2>
     <form method="post" th:action="@{/login}" class="space-y-6">
         <div>
@@ -52,5 +55,7 @@
         </div>
     </form>
 </div>
+</div>
+
 </body>
 </html>

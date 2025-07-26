@@ -26,8 +26,12 @@ public String home(Model model, @AuthenticationPrincipal UserDetails userDetails
         model.addAttribute("username", user.getUsername());
         model.addAttribute("email", user.getEmail());
         model.addAttribute("avatar", user.getAvatar());
-        System.out.println(user.getAvatar());
     }
     return "home";
 }
+
+    @GetMapping("/upload")
+    public String uploadForm(){
+        return "upload";
+    }
 }

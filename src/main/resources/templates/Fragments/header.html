@@ -170,7 +170,7 @@
     </nav>
 
     <nav
-      class="glass-effect border-b border-gray-200 sticky top-0 z-50"
+      class=" border-b border-gray-200 sticky top-0 z-50 bg-white"
       th:fragment="nav-1"
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -206,6 +206,8 @@
               <a
                 href="/profile"
                 class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600"
+
+                sec:authorize="isAuthenticated()"
               >
                 <i class="fas fa-user mr-2"></i>Profile
               </a>
@@ -246,6 +248,7 @@
                   <i class="fas fa-user text-white text-xs"></i>
                 </div>
               </div>
+
             </div>
 
             <form th:action="@{/logout}" method="post">
@@ -258,8 +261,27 @@
               </button>
             </form>
           </div>
+          <div sec:authorize="isAnonymous()" class="flex justify-end items-center space-x-4">
+            <a th:href="@{/login}">
+              <button
+                      class=" text-purple-600 font-semibold transition-colors"
+              >
+                Đăng nhập
+              </button>
+            </a>
+            <a th:href="@{/register}">
+              <button
+                      class=" text-purple-600  rounded font-semibold "
+              >
+                Đăng ký
+              </button>
+            </a>
+          </div>
         </div>
+
       </div>
+
+
     </nav>
 
     <script th:src="@{/js/script.js}"></script>
