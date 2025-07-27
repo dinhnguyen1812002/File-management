@@ -82,4 +82,34 @@ public class FolderService {
 
         return passwordEncoder.matches(password, folder.getPassword());
     }
+
+    // Delete a folder
+    public void deleteFolder(Long folderId, String username) {
+        Folder folder = folderRepository.findById(folderId)
+                .orElseThrow(() -> new IllegalArgumentException("Folder not found"));
+        User user = userRepository.findByUsername(username);
+
+        // Check if user has permission to delete this folder
+        if (!folder.getUser().equals(user)) {
+            throw new SecurityException("User does not have permission to delete this folder.");
+        }
+
+        // Delete folder from database
+        // Note: Due to cascade settings, this will also delete all subfolders and files
+        folderRepository.delete(folder);
+    }
+
+    // Delete multiple folders
+    public void deleteFolders(List<Long> folderIds, String username) {
+        User user = userRepository.findByUsername(username);
+
+        for (Long folderId : folderIds) {
+            try {
+                deleteFolder(folderId, username);
+            } catch (Exception e) {
+                // Log error but continue with other folders
+                System.err.println("Error deleting folder " + folderId + ": " + e.getMessage());
+            }
+        }
+    }
 }

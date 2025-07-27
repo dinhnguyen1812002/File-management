@@ -7,9 +7,12 @@ document.addEventListener('alpine:init', () => {
         showShareModel: false,
         showPasswordModal: false,
         showPasswordVerificationModal: false,
-        
+
         // Data objects
-        selectedFile: null,
+        selectedFile: {
+            id: null,
+            fileName: ''
+        },
         selectedFolder: null,
         selectedFiles: [],
         passwordVerificationData: {
@@ -18,9 +21,16 @@ document.addEventListener('alpine:init', () => {
             password: '',
             error: ''
         },
+        showPreviewModal: false,
+        previewUrl: '',
+        previewType: '',
+
 
         // Initialize Alpine.js component
         init() {
+            // Store reference to this component in global variable
+            window.dashboardInstance = this;
+
             // Watch for upload modal changes
             this.$watch('showUploadModal', (value) => {
                 if (value) {
@@ -275,6 +285,107 @@ document.addEventListener('alpine:init', () => {
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        },
+
+        // Handle password click for folders
+        handlePasswordClick(button) {
+            const folderId = button.getAttribute('data-folder-id');
+            document.getElementById('passwordFolderId').value = folderId;
+
+            // Check if folder has password
+            const folderHasPassword = button.closest('[data-folder-id]').getAttribute('data-has-password') === 'true';
+            const modalTitle = document.getElementById('passwordModalTitle');
+            const modalBtn = document.getElementById('passwordModalBtn');
+            const modalHint = document.getElementById('passwordModalHint');
+
+            if (folderHasPassword) {
+                modalTitle.textContent = 'Cập nhật mật khẩu thư mục';
+                modalBtn.textContent = 'Cập nhật';
+                modalHint.style.display = 'block';
+            } else {
+                modalTitle.textContent = 'Đặt mật khẩu cho thư mục';
+                modalBtn.textContent = 'Đặt mật khẩu';
+                modalHint.style.display = 'none';
+            }
+
+            // Open modal
+            this.showPasswordModal = true;
+        },
+
+        // Open share modal
+        openShareModal(fileId, fileName) {
+            // Set form action and input value
+            const form = document.getElementById('shareForm');
+            const input = document.getElementById('fileIdInput');
+
+            form.setAttribute('action', '/files/send/' + fileId);
+            input.value = fileId;
+
+            // Set selected file data
+            this.selectedFile.id = fileId;
+            this.selectedFile.fileName = fileName;
+
+            // Show modal
+            this.showShareModel = true;
+        },
+
+        // Handle share button click
+        handleShareClick(button) {
+            const fileId = button.getAttribute("data-file-id");
+            const fileName = button.getAttribute("data-file-name");
+
+            this.openShareModal(fileId, fileName);
+        },
+
+        // Set folder password
+        setFolderPassword(folderId, folderName) {
+            // Set the folder ID in the hidden input
+            document.getElementById('passwordFolderId').value = folderId;
+
+            // Show the password modal
+            this.showPasswordModal = true;
+        },
+
+        handlePreviewClick(fileId, fileName) {
+            const extension = fileName.split('.').pop().toLowerCase();
+            let previewType = 'document';
+            if (['mp4', 'webm', 'ogg'].includes(extension)) {
+                previewType = 'video';
+                this.previewUrl = `/files/stream/${fileId}`;
+            } else if (['pdf'].includes(extension)) {
+                previewType = 'pdf';
+                this.previewUrl = `/files/preview/${fileId}`;
+            } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension)) {
+                previewType = 'document';
+                this.previewUrl = `/files/preview/${fileId}`;
+            }
+            this.previewType = previewType;
+            this.showPreviewModal = true;
+
+            // For non-PDF documents, load client-side rendering
+            if (previewType === 'document') {
+                this.loadDocumentPreview(fileId, extension);
+            }
+        },
+        loadDocumentPreview(fileId, extension) {
+            // Placeholder for client-side document rendering
+            // Use libraries like docx.js or xlsx.js for DOCX/XLSX rendering
+            console.log(`Load document preview for file ${fileId} with extension ${extension}`);
         }
     }));
 }); 
+
+// Create a global variable to store the dashboard component
+window.dashboardInstance = null;
+
+// Function to be called from HTML
+document.addEventListener('alpine:initialized', () => {
+    // Add a global method to access the dashboard component
+    window.removeFileFromAlpine = function(index) {
+        if (window.dashboardInstance) {
+            window.dashboardInstance.removeFile(index);
+        } else {
+            console.error('Dashboard instance not available');
+        }
+    };
+});

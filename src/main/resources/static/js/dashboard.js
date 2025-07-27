@@ -1,4 +1,4 @@
-// Dashboard JavaScript functionality
+// Dashboard JavaScript functionality for file management
 let selectedFiles = [];
 
 // File type icons mapping
@@ -17,7 +17,6 @@ const fileIcons = {
 
 function getFileIcon(fileName) {
     const extension = fileName.split('.').pop().toLowerCase();
-
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(extension)) {
         return fileIcons.image;
     } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(extension)) {
@@ -58,6 +57,7 @@ function addFiles(files) {
 
         // Check if file already exists
         if (selectedFiles.find(f => f.name === file.name && f.size === file.size)) {
+            alert(`File "${file.name}" is already selected.`);
             return;
         }
 
@@ -84,32 +84,33 @@ function updateFilePreview() {
     const filePreview = document.getElementById('filePreview');
     const fileList = document.getElementById('fileList');
 
+    if (!filePreview || !fileList) return;
+
     if (selectedFiles.length === 0) {
         filePreview.classList.add('hidden');
         return;
     }
 
     filePreview.classList.remove('hidden');
-
     fileList.innerHTML = selectedFiles.map((file, index) => `
-    <div class="file-preview-item bg-white border border-gray-200 rounded-lg p-4 flex items-center space-x-4">
-        <div class="flex-shrink-0">
-            <i class="${getFileIcon(file.name)} text-2xl"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-                <h5 class="text-sm font-medium text-gray-900 truncate">${file.name}</h5>
-                <button type="button" onclick="removeFile(${index})" class="ml-2 text-red-500 hover:text-red-700 transition-colors">
-                    <i class="fas fa-times"></i>
-                </button>
+        <div class="file-preview-item bg-white border border-gray-200 rounded-lg p-4 flex items-center space-x-4">
+            <div class="flex-shrink-0">
+                <i class="${getFileIcon(file.name)} text-2xl"></i>
             </div>
-            <div class="flex items-center space-x-4 mt-1">
-                <span class="text-xs text-gray-500">${formatFileSize(file.size)}</span>
-                <span class="text-xs text-gray-500">${file.type || 'Unknown type'}</span>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                    <h5 class="text-sm font-medium text-gray-900 truncate">${file.name}</h5>
+                    <button type="button" onclick="removeFile(${index})" class="ml-2 text-red-500 hover:text-red-700 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="flex items-center space-x-4 mt-1">
+                    <span class="text-xs text-gray-500">${formatFileSize(file.size)}</span>
+                    <span class="text-xs text-gray-500">${file.type || 'Unknown type'}</span>
+                </div>
             </div>
         </div>
-    </div>
-`).join('');
+    `).join('');
 
     // Update summary
     const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
@@ -119,8 +120,12 @@ function updateFilePreview() {
 
 function updateUploadButton() {
     const uploadBtn = document.getElementById('uploadBtn');
+    if (!uploadBtn) return;
+
     uploadBtn.disabled = selectedFiles.length === 0;
-    uploadBtn.textContent = selectedFiles.length > 0 ? `Upload ${selectedFiles.length} File${selectedFiles.length > 1 ? 's' : ''}` : 'Upload Files';
+    uploadBtn.textContent = selectedFiles.length > 0
+        ? `Upload ${selectedFiles.length} File${selectedFiles.length > 1 ? 's' : ''}`
+        : 'Upload Files';
 }
 
 function uploadFiles() {
@@ -132,17 +137,18 @@ function uploadFiles() {
     const uploadBtn = document.getElementById('uploadBtn');
     const form = document.getElementById('uploadForm');
 
+    if (!uploadProgress || !progressBar || !progressPercent || !uploadBtn || !form) return;
+
     uploadProgress.classList.remove('hidden');
     uploadBtn.disabled = true;
     uploadBtn.textContent = 'Uploading...';
 
-    // Create FormData and append files
     const formData = new FormData(form);
     selectedFiles.forEach(file => {
         formData.append('file', file);
     });
 
-    // Simulate upload progress
+    // Simulate upload progress (replace with actual XHR for real progress if needed)
     let progress = 0;
     const interval = setInterval(() => {
         progress += Math.random() * 15;
@@ -153,98 +159,10 @@ function uploadFiles() {
 
         if (progress >= 100) {
             clearInterval(interval);
-            // Submit the form
             form.submit();
         }
     }, 200);
 }
-
-// Initialize drag and drop functionality when modal is shown
-function initializeUploadModal() {
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-
-    if (dropZone && fileInput) {
-        dropZone.addEventListener('click', () => fileInput.click());
-
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
-
-        dropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-
-            const files = e.dataTransfer.files;
-            addFiles(files);
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            addFiles(e.target.files);
-        });
-    }
-}
-
-// Initialize when Alpine.js is ready
-document.addEventListener('alpine:init', () => {
-    Alpine.data('uploadModal', () => ({
-        showUploadModal: false,
-        init() {
-            this.$watch('showUploadModal', (value) => {
-                if (value) {
-                    setTimeout(initializeUploadModal, 100);
-                } else {
-                    clearAllFiles();
-                }
-            });
-        }
-    }));
-});
-
-function handlePasswordClick(button) {
-    const folderId = button.getAttribute('data-folder-id');
-    document.getElementById('passwordFolderId').value = folderId;
-
-    // Mở modal thông qua Alpine
-    document.querySelector('[x-data]').__x.$data.showPasswordModal = true;
-}
-
-function openShareModal(fileId, fileName) {
-    // Gán action đúng endpoint
-    const form = document.getElementById('shareForm');
-    const input = document.getElementById('fileIdInput');
-
-    form.setAttribute('action', '/files/send/' + fileId);
-    input.value = fileId;
-
-    // Hiển thị tên file
-    document.querySelector('[x-text="selectedFile.fileName"]').textContent = fileName;
-
-    // Hiển thị modal
-    document.querySelector('[x-data]').__x.$data.showShareModel = true;
-}
-
-function handleShareClick(button) {
-    const fileId = button.getAttribute("data-file-id");
-    const fileName = button.getAttribute("data-file-name");
-
-    openShareModal(fileId, fileName);
-}
-
-function setFolderPassword(folderId, folderName) {
-    // Set the folder ID in the hidden input
-    document.getElementById('passwordFolderId').value = folderId;
-
-    // Show the password modal
-    document.querySelector('[x-data]').__x.$data.showPasswordModal = true;
-}
-
 function updateDownloadButton() {
     const checkboxes = document.querySelectorAll('.file-checkbox:checked');
     const downloadBtn = document.getElementById('downloadSelectedBtn');
@@ -268,9 +186,268 @@ function downloadSelectedFiles() {
 
     form.submit();
 }
+document.querySelectorAll('.file-checkbox').forEach(cb => {
+    cb.addEventListener('change', () => {
+        const hasChecked = document.querySelectorAll('.file-checkbox:checked').length > 0;
+        document.getElementById('downloadSelectedBtn').disabled = !hasChecked;
+    });
+});
+
+
+function updateDeleteButton() {
+    const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+    const deleteBtn = document.getElementById('deleteSelectedBtn');
+    if (!deleteBtn) return;
+
+    if (checkboxes.length > 0) {
+        deleteBtn.classList.remove('hidden');
+        deleteBtn.textContent = `Delete Selected (${checkboxes.length})`;
+    } else {
+        deleteBtn.classList.add('hidden');
+    }
+}
+
+// function deleteSelectedFiles() {
+//     const form = document.getElementById('multipleDeleteForm');
+//     const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+//     if (!form) return;
+
+//     if (checkboxes.length === 0) {
+//         alert('Please select at least one file to delete');
+//         return;
+//     }
+
+//     if (confirm(`Are you sure you want to delete ${checkboxes.length} file(s)?`)) {
+//         const fileIdsInput = document.getElementById('fileIdsInput');
+//         if (fileIdsInput) {
+//             const fileIds = Array.from(checkboxes).map(cb => cb.value);
+//             fileIdsInput.value = fileIds.join(',');
+//             form.submit();
+//         }
+//     }
+// }
+// function deleteSelectedFiles() {
+//     const form = document.getElementById('multipleDeleteForm');
+//     const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+//     if (!form) return;
+
+//     if (checkboxes.length === 0) {
+//         alert('Please select at least one file to delete');
+//         return;
+//     }
+
+//     if (confirm(`Are you sure you want to delete ${checkboxes.length} file(s)?`)) {
+//         const fileIdsInput = document.getElementById('fileIdsInput');
+//         if (fileIdsInput) {
+//             const fileIds = Array.from(checkboxes).map(cb => cb.value);
+//             fileIdsInput.value = fileIds.join(',');
+//             form.submit();
+//         }
+//     }
+// }
+function deleteSelectedFiles() {
+    const form = document.getElementById('multipleDeleteForm');
+    const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+    if (!form) return;
+
+    if (checkboxes.length === 0) {
+        alert('Please select at least one file to delete');
+        return;
+    }
+
+    if (confirm(`Are you sure you want to delete ${checkboxes.length} file(s)?`)) {
+        // Clear existing fileIds inputs
+        form.querySelectorAll('input[name="fileIds"]').forEach(input => input.remove());
+
+        // Add a hidden input for each selected file
+        Array.from(checkboxes).forEach(cb => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'id';
+            input.value = cb.value;
+            form.appendChild(input);
+        });
+
+        form.submit();
+    }
+}
+
+function handlePreviewClick(fileId, fileName) {
+    const extension = fileName.split('.').pop().toLowerCase();
+    const alpineData = document.querySelector('[x-data="dashboard"]')?.__x?.$data;
+    if (!alpineData) {
+        console.error('Alpine.js dashboard component not found');
+        return;
+    }
+
+    let previewUrl = '';
+    let previewType = 'document';
+
+    if (['mp4', 'webm', 'ogg'].includes(extension)) {
+        previewType = 'video';
+        previewUrl = `/files/stream/${fileId}`;
+    } else if (['pdf'].includes(extension)) {
+        previewType = 'pdf';
+        previewUrl = `/files/preview/${fileId}`;
+    } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension)) {
+        previewType = 'document';
+        previewUrl = `/files/preview/${fileId}`;
+    } else {
+        alert('This file type cannot be previewed.');
+        return;
+    }
+
+    alpineData.previewUrl = previewUrl;
+    alpineData.previewType = previewType;
+    alpineData.showPreviewModal = true;
+
+    if (previewType === 'document') {
+        loadDocumentPreview(fileId, extension);
+    }
+}
+
+async function loadDocumentPreview(fileId, extension) {
+    const previewContainer = document.getElementById('documentPreview');
+    if (!previewContainer) return;
+
+    previewContainer.innerHTML = 'Loading document...';
+
+    try {
+        const response = await fetch(`/files/preview/${fileId}`);
+        if (!response.ok) {
+            throw new Error('Failed to load document');
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        // Placeholder for client-side rendering (requires libraries like docx.js or SheetJS)
+        if (['doc', 'docx'].includes(extension)) {
+            // Example: Use docx.js (must be included in HTML)
+            // const doc = await docx.renderDocument(arrayBuffer, previewContainer);
+            previewContainer.innerHTML = 'DOCX preview requires docx.js library';
+        } else if (['xls', 'xlsx'].includes(extension)) {
+            // Example: Use SheetJS (must be included in HTML)
+            // const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+            previewContainer.innerHTML = 'XLSX preview requires SheetJS library';
+        } else if (['ppt', 'pptx'].includes(extension)) {
+            previewContainer.innerHTML = 'PPTX preview requires pptx.js library';
+        }
+    } catch (error) {
+        previewContainer.innerHTML = `Error loading document: ${error.message}`;
+    }
+}
+
+function initializeUploadModal() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    if (dropZone && fileInput) {
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            addFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            addFiles(e.target.files);
+        });
+    }
+}
+
+function handlePasswordClick(button) {
+    const folderId = button.getAttribute('data-folder-id');
+    const modalTitle = document.getElementById('passwordModalTitle');
+    const modalBtn = document.getElementById('passwordModalBtn');
+    const modalHint = document.getElementById('passwordModalHint');
+    const passwordFolderId = document.getElementById('passwordFolderId');
+
+    if (!passwordFolderId) return;
+
+    passwordFolderId.value = folderId;
+
+    const folderHasPassword = button.closest('[data-folder-id]').getAttribute('data-has-password') === 'true';
+    if (folderHasPassword) {
+        modalTitle.textContent = 'Update Folder Password';
+        modalBtn.textContent = 'Update';
+        modalHint.style.display = 'block';
+    } else {
+        modalTitle.textContent = 'Set Folder Password';
+        modalBtn.textContent = 'Set Password';
+        modalHint.style.display = 'none';
+    }
+
+    document.querySelector('[x-data="dashboard"]').__x.$data.showPasswordModal = true;
+}
+
+function openShareModal(fileId, fileName) {
+    const form = document.getElementById('shareForm');
+    const input = document.getElementById('fileIdInput');
+    const alpineData = document.querySelector('[x-data="dashboard"]').__x.$data;
+
+    if (!form || !input || !alpineData) return;
+
+    form.setAttribute('action', `/files/send/${fileId}`);
+    input.value = fileId;
+    alpineData.selectedFile.id = fileId;
+    alpineData.selectedFile.fileName = fileName;
+    alpineData.showShareModel = true;
+}
+
+function handleShareClick(button) {
+    const fileId = button.getAttribute('data-file-id');
+    const fileName = button.getAttribute('data-file-name');
+    openShareModal(fileId, fileName);
+}
+
+function setFolderPassword(folderId, folderName) {
+    const passwordFolderId = document.getElementById('passwordFolderId');
+    if (passwordFolderId) {
+        passwordFolderId.value = folderId;
+        document.querySelector('[x-data="dashboard"]').__x.$data.showPasswordModal = true;
+    }
+}
+
+// Initialize Alpine.js component
+document.addEventListener('alpine:init', () => {
+    Alpine.data('uploadModal', () => ({
+        showUploadModal: false,
+        init() {
+            this.$watch('showUploadModal', (value) => {
+                if (value) {
+                    setTimeout(initializeUploadModal, 100);
+                } else {
+                    clearAllFiles();
+                }
+            });
+        }
+    }));
+});
+
+// Initialize checkbox event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.file-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateDeleteButton);
+    });
+});
+
 
 // Global function to call Alpine.js methods
 function removeFileFromAlpine(index) {
-    const alpineComponent = document.querySelector('[x-data="dashboard"]').__x.$data;
-    alpineComponent.removeFile(index);
-} 
+    const alpineComponent = document.querySelector('[x-data="dashboard"]')?.__x?.$data;
+    if (alpineComponent) {
+        alpineComponent.removeFile(index);
+    } else {
+        console.error('Dashboard instance not available');
+    }
+}

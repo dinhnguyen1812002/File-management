@@ -6,15 +6,20 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+
 import java.util.ArrayList;
 import java.util.List;
+
+
+
+import com.app.file_transfer.model.base.BaseEntity;
 
 @Entity
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class File {
+public class File extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,6 +40,8 @@ public class File {
     @ManyToOne
     @JoinColumn(name = "folder_id")
     private Folder folder;
+   
+    
 
     // Constructors, getters, setters
 }

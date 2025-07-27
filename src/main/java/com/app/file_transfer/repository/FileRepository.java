@@ -18,4 +18,7 @@ public interface FileRepository extends JpaRepository<File, Long> {
     List<File> findByUploaderAndFolderIsNull(User uploader);
 
     List<File> findByUploaderAndFolder(User uploader, Folder folder);
+
+    List<File> findByUploaderAndFolderOrderByCreatedAtDesc(User uploader, Folder folder);
+List<File> findByUploaderAndFolderIsNullOrderByCreatedAtDesc(User uploader);
 }
