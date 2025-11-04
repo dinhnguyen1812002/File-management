@@ -10,6 +10,8 @@ import com.app.file_transfer.repository.UserRepository;
 import com.app.file_transfer.services.FileService;
 import com.app.file_transfer.services.FileStorageService;
 import com.app.file_transfer.services.FolderService;
+import com.app.file_transfer.services.PreviewService;
+import com.app.file_transfer.services.StorageUsageService;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import jakarta.servlet.http.HttpSession;
@@ -67,6 +69,12 @@ public class FileController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private StorageUsageService storageUsageService;
+
+    @Autowired
+    private PreviewService previewService;
+
 
     @GetMapping("/upload")
     public String showUploadForm(Model model) {
@@ -98,13 +106,21 @@ public class FileController {
                 continue;
             }
 
+            // Check storage limit before uploading
+            if (!storageUsageService.canUploadFile(currentUser.getUsername(), file.getSize())) {
+                redirectAttributes.addFlashAttribute("error",
+                    "Cannot upload " + file.getOriginalFilename() + ". Storage limit exceeded. " +
+                    "Remaining space: " + storageUsageService.formatBytes(storageUsageService.getRemainingStorage(currentUser.getUsername())));
+                return "redirect:/files/dashboard" + (folderId != null ? "?folderId=" + folderId : "");
+            }
+
             String fileName = fileStorageService.storeFile(file);
 
             File newFile = new File();
             newFile.setFileName(fileName);
             newFile.setFileType(file.getContentType());
             newFile.setFileSize(file.getSize());
-            newFile.setFilePath("./uploads/" + fileName);
+            newFile.setFilePath("uploads/" + fileName);
             newFile.setUploader(uploader);
 
             if (parentFolder != null) {
@@ -136,18 +152,8 @@ public class FileController {
 
         Resource resource = fileStorageService.loadFileAsResource(file.getFileName());
 
-        // Encode the filename in RFC 5987 to handle special characters
-        String encodedFileName;
-        try {
-            encodedFileName = URLEncoder.encode(
-                    Objects.requireNonNull(resource.getFilename()),
-                            StandardCharsets.UTF_8)
-                    .replace("+", "%20"); // Replace spaces encoded as "+" with "%20"
-        } catch (Exception e) {
-            throw new RuntimeException("Error encoding file name.", e);
-        }
-
         // Set Content-Disposition header with encoded filename
+        String encodedFileName = PreviewService.encodeFilenameForHeader(file.getFileName());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFileName)
                 .body(resource);
@@ -247,7 +253,7 @@ public class FileController {
     //     System.out.println(files);
     //     return "dashboard";
     // }
- @GetMapping("/dashboard")
+    @GetMapping("/dashboard")
     public String showDashboard(@RequestParam(value = "folderId", required = false) Long folderId,
                                 Model model,
                                 @AuthenticationPrincipal UserDetails currentUser,
@@ -283,10 +289,14 @@ public class FileController {
                 ? fileRepository.findByUploaderAndFolderIsNull(user)
                 : fileRepository.findByUploaderAndFolder(user, currentFolder);
 
+        // Get all folders for move modal
+        List<Folder> allFolders = folderRepository.findByUser(user);
 
         model.addAttribute("currentFolder", currentFolder);
         model.addAttribute("subFolders", subFolders);
         model.addAttribute("files", files);
+        model.addAttribute("allFolders", allFolders);
+        model.addAttribute("users", userRepository.findAll()); // For share modal
 
         return "dashboard";
     }
@@ -299,6 +309,50 @@ public class FileController {
         folderService.createFolder(folderName, parentId, currentUser.getUsername(),password);
         redirectAttributes.addFlashAttribute("message", "Folder '" + folderName + "' created successfully.");
         return "redirect:/files/dashboard" + (parentId != null ? "?folderId=" + parentId : "");
+    }
+
+    @PostMapping("/move/{fileId}")
+    public String moveFile(@PathVariable Long fileId,
+                          @RequestParam(value = "targetFolderId", required = false) String targetFolderIdStr,
+                          @AuthenticationPrincipal UserDetails currentUser,
+                          RedirectAttributes redirectAttributes) {
+        try {
+            // Handle the case where targetFolderId is sent as "null" string or empty
+            Long targetFolderId = null;
+            if (targetFolderIdStr != null && !targetFolderIdStr.trim().isEmpty() && !"null".equals(targetFolderIdStr)) {
+                try {
+                    targetFolderId = Long.parseLong(targetFolderIdStr);
+                } catch (NumberFormatException e) {
+                    redirectAttributes.addFlashAttribute("error", "Invalid folder ID format.");
+                    return "redirect:/files/dashboard";
+                }
+            }
+
+            fileService.moveFile(fileId, targetFolderId, currentUser.getUsername());
+            redirectAttributes.addFlashAttribute("message", "File moved successfully!");
+        } catch (SecurityException e) {
+            redirectAttributes.addFlashAttribute("error", "You don't have permission to move this file.");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "An error occurred while moving the file.");
+        }
+
+        // Redirect back to current folder or dashboard
+        Long targetFolderId = null;
+        if (targetFolderIdStr != null && !targetFolderIdStr.trim().isEmpty() && !"null".equals(targetFolderIdStr)) {
+            try {
+                targetFolderId = Long.parseLong(targetFolderIdStr);
+            } catch (NumberFormatException e) {
+                // Ignore parsing error for redirect, just go to dashboard
+            }
+        }
+
+        if (targetFolderId != null) {
+            return "redirect:/files/dashboard?folderId=" + targetFolderId;
+        } else {
+            return "redirect:/files/dashboard";
+        }
     }
     @GetMapping("/list")
     public String listAllFile(@AuthenticationPrincipal UserDetails user, Model model){
@@ -523,36 +577,48 @@ public class FileController {
 
     // Preview a file
     @GetMapping("/preview/{fileId}")
-    public ResponseEntity<?> previewFile(@PathVariable Long fileId,
-                                        @AuthenticationPrincipal UserDetails currentUser) {
+    public ResponseEntity<Resource> previewFile(@PathVariable Long fileId,
+                                               @AuthenticationPrincipal UserDetails currentUser) {
+        return previewService.generatePreviewResponse(fileId, currentUser.getUsername());
+    }
+
+    // Get file metadata for preview
+    @GetMapping("/api/preview/{fileId}/metadata")
+    @ResponseBody
+    public ResponseEntity<?> getFileMetadata(@PathVariable Long fileId,
+                                           @AuthenticationPrincipal UserDetails currentUser) {
         try {
-            File file = fileRepository.findById(fileId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found"));
-
-            // Check if user has permission to preview this file
-            User user = userRepository.findByUsername(currentUser.getUsername());
-            if (!file.getUploader().equals(user) && !file.getRecipients().contains(user)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You don't have permission to preview this file.");
-            }
-
-            // Check if file is previewable
-            if (!fileStorageService.isPreviewableDocument(file.getFileName()) && 
-                !fileStorageService.isStreamableVideo(file.getFileName()) &&
-                !fileStorageService.isImage(file.getFileName())
-
-                ) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This file type cannot be previewed.");
-            }
-
-            Resource resource = fileStorageService.loadFileAsResource(file.getFileName());
-            MediaType mediaType = fileStorageService.getMediaTypeForFileName(file.getFileName());
-
-            return ResponseEntity.ok()
-                    .contentType(mediaType)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getFileName() + "\"")
-                    .body(resource);
+            Map<String, Object> metadata = previewService.getFileMetadata(fileId, currentUser.getUsername());
+            return ResponseEntity.ok(metadata);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "You don't have permission to access this file"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An error occurred while retrieving file metadata"));
+        }
+    }
+
+    // Get preview info for a file
+    @GetMapping("/api/preview/{fileId}/info")
+    @ResponseBody
+    public ResponseEntity<?> getPreviewInfo(@PathVariable Long fileId,
+                                          @AuthenticationPrincipal UserDetails currentUser) {
+        try {
+            PreviewService.PreviewInfo previewInfo = previewService.getPreviewInfo(fileId, currentUser.getUsername());
+            return ResponseEntity.ok(previewInfo);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "You don't have permission to preview this file"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An error occurred while generating preview"));
         }
     }
 
@@ -581,7 +647,10 @@ public class FileController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(mediaType);
-            headers.set(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getFileName() + "\"");
+
+            // Properly encode filename for Content-Disposition header to handle Unicode characters
+            String encodedFileName = PreviewService.encodeFilenameForHeader(file.getFileName());
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, "inline; filename*=UTF-8''" + encodedFileName);
 
             if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
                 String[] ranges = rangeHeader.replace("bytes=", "").split("-");
@@ -609,7 +678,31 @@ public class FileController {
                     .headers(headers)
                     .body(resource);
         } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error streaming file: " + e.getMessage());
+            // Check if it's a client disconnect (common during video streaming)
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && (
+                errorMessage.contains("Connection reset by peer") ||
+                errorMessage.contains("Broken pipe") ||
+                errorMessage.contains("connection was aborted") ||
+                errorMessage.contains("ClientAbortException"))) {
+
+                // Log as debug level since client disconnects are normal
+                System.out.println("Client disconnected during video streaming for file: " + fileId);
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            }
+
+            // For other IO errors, log and return server error
+            System.err.println("IO Error streaming file " + fileId + ": " + errorMessage);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error streaming file");
+        } catch (Exception e) {
+            System.err.println("Unexpected error streaming file " + fileId + ": " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error streaming file");
         }
+    }
+
+    // Test endpoint for video player
+    @GetMapping("/video-test")
+    public String videoTest() {
+        return "video-test";
     }
 }

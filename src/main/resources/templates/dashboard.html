@@ -177,8 +177,8 @@
                             <div
                                 class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
                                 <button type="button"
-                                    class="p-1 bg-white rounded-full shadow-sm text-gray-500 hover:text-indigo-600"
-                                    data-folder-id="[[${folder.id}]]" @click="handlePasswordClick($event.target)">
+                                    class="p-1 bg-white rounded-full shadow-sm text-gray-500 hover:text-indigo-600 folder-password-btn"
+                                    th:data-folder-id="${folder.id}">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
                                         viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -240,12 +240,16 @@
                                                     d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                                             </svg>
                                             <!-- Image icon for images -->
-                                            <svg th:if="${#strings.startsWith(file.fileType, 'image')}" class="h-6 w-6"
-                                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                stroke-width="1.5" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                                            </svg>
+<!--                                            <svg th:if="${#strings.startsWith(file.fileType, 'image')}" class="h-6 w-6"-->
+<!--                                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"-->
+<!--                                                stroke-width="1.5" stroke="currentColor">-->
+<!--                                                <path stroke-linecap="round" stroke-linejoin="round"-->
+<!--                                                    d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />-->
+<!--                                            </svg>-->
+                                            <div th:if="${#strings.startsWith(file.fileType, 'image')}" >
+                                                <img  th:src="${file.filePath}" th:alt="${file.fileName}"/>
+
+                                            </div>
                                             <!-- Video icon for videos -->
                                             <svg th:if="${#strings.startsWith(file.fileType, 'video')}" class="h-6 w-6"
                                                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -290,19 +294,35 @@
 
                                         <!-- Actions -->
                                         <div class="ml-4 flex-shrink-0 flex space-x-2">
-                                            
+
+                                            <!-- Preview Button -->
+                                            <button type="button"
+                                                class="inline-flex items-center px-2.5 py-1.5 border
+                                                border-transparent text-xs font-medium rounded text-purple-700 bg-purple-100 hover:bg-purple-200 preview-file-btn"
+                                                th:data-file-id="${file.id}" th:data-file-name="${file.fileName}"
+                                                title="Preview file">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+
                                             <a th:href="@{/files/download/{id}(id=${file.id})}"
-                                                class="inline-flex items-center px-2.5 py-1.5 border 
-                                                border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 
-                                                hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                                class="inline-flex items-center px-2.5 py-1.5 border
+                                                border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100
+                                                hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                                title="Download file">
                                                 <i class="fa-solid fa-download"></i>
                                             </a>
                                             <button type="button"
-                                                class="inline-flex items-center px-2.5 py-1.5 border 
-                                                border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
-                                                data-file-id="[[${file.id}]]" data-file-name="[[${file.fileName}]]"
-                                                @click="handleShareClick($event.target)">
+                                                class="inline-flex items-center px-2.5 py-1.5 border
+                                                border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 share-file-btn"
+                                                th:data-file-id="${file.id}" th:data-file-name="${file.fileName}">
                                                 <i class="fa-solid fa-share-from-square"></i>
+                                            </button>
+                                            <button type="button"
+                                                class="inline-flex items-center px-2.5 py-1.5 border
+                                                border-transparent text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200 move-file-btn"
+                                                th:data-file-id="${file.id}" th:data-file-name="${file.fileName}"
+                                                title="Move file">
+                                                <i class="fa-solid fa-arrows-up-down-left-right"></i>
                                             </button>
                                             <!-- Preview button for documents and videos -->
                                             <a th:if="${#strings.startsWith(file.fileType, 'application/pdf') or
@@ -661,38 +681,315 @@
         </div>
     </div>
 
+    <!-- Move File Modal -->
+    <div x-show="showMoveModal" class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true"
+        style="display: none;">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div @click.away="showMoveModal = false"
+                    class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
 
-    <div x-data="{ showPreviewModal: false, previewUrl: '', previewType: '' }" x-show="showPreviewModal"
-        style="display: none;" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
-        <div class="modal-content bg-white rounded-lg p-6 w-full max-w-4xl">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold">File Preview</h2>
-                <button @click="showPreviewModal = false" class="text-red-500 hover:text-red-700">Close</button>
+                    <div class="w-full max-w-lg p-6 space-y-6 bg-white rounded-lg shadow-md">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-arrows-up-down-left-right text-orange-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-900">Move File</h3>
+                                <p class="text-sm text-gray-600">
+                                    Moving file: <span class="font-semibold text-gray-800" x-text="selectedFile.fileName"></span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <form id="moveForm" method="post" @submit="handleMoveSubmit($event)">
+                            <input type="hidden" name="fileId" id="moveFileIdInput">
+                            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+
+                            <div>
+                                <label for="targetFolderId" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Select destination folder
+                                </label>
+                                <div class="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-md p-3">
+                                    <!-- Root option -->
+                                    <label class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input type="radio" name="targetFolderId" value="" class="text-orange-600 focus:ring-orange-500" checked>
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-home text-gray-500"></i>
+                                            <span class="text-sm font-medium text-gray-900">Root (No folder)</span>
+                                        </div>
+                                    </label>
+
+                                    <!-- Folder options -->
+                                    <div th:each="folder : ${allFolders}" class="folder-option">
+                                        <label class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                            <input type="radio" name="targetFolderId" th:value="${folder.id}" class="text-orange-600 focus:ring-orange-500">
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fas fa-folder text-indigo-500"></i>
+                                                <span class="text-sm text-gray-900" th:text="${folder.name}"></span>
+                                                <span th:if="${folder.password != null and !folder.password.isEmpty()}"
+                                                      class="text-xs text-yellow-600" title="Password protected">
+                                                    <i class="fas fa-lock"></i>
+                                                </span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-end space-x-3 mt-6">
+                                <button type="button" @click="showMoveModal = false"
+                                    class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                    class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors">
+                                    Move File
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
             </div>
-            <div class="preview-container">
-                <template x-if="previewType === 'video'">
-                    <video controls class="w-full h-auto">
-                        <source :src="previewUrl" type="video/mp4">
-                        <source :src="previewUrl" type="video/webm">
-                        <source :src="previewUrl" type="video/ogg">
-                        Your browser does not support the video tag.
-                    </video>
-                </template>
-                <template x-if="previewType === 'pdf'">
-                    <iframe :src="previewUrl" class="w-full h-96"></iframe>
-                </template>
-               <template x-if="previewType === 'image'">
-                        <img :src="previewUrl" alt="Image preview" class="max-w-full max-h-96" />
+        </div>
+    </div>
+
+    <!-- Enhanced File Preview Modal -->
+    <div x-show="showPreviewModal"
+         style="display: none;"
+         class="preview-modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+         @keydown.escape="closePreviewModal()"
+         @click.self="closePreviewModal()">
+
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-eye text-indigo-600"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900" x-text="previewData.fileName || 'File Preview'">File Preview</h2>
+                        <p class="text-sm text-gray-500" x-show="previewData.fileSize" x-text="previewData.fileType + ' • ' + previewData.fileSize"></p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="downloadCurrentFile()"
+                            class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="Download file">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button @click="closePreviewModal()"
+                            class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Close preview">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="relative overflow-auto max-h-[calc(90vh-120px)]">
+                <!-- Loading State -->
+                <div x-show="previewData.loading" class="flex items-center justify-center h-64">
+                    <div class="text-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                        <p class="text-gray-600">Loading preview...</p>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div x-show="previewData.error" class="flex items-center justify-center h-64">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+                        <p class="text-gray-600" x-text="previewData.error">Failed to load preview</p>
+                    </div>
+                </div>
+
+                <!-- Preview Content -->
+                <div x-show="!previewData.loading && !previewData.error" class="p-6">
+                    <!-- Image Preview -->
+                    <template x-if="previewData.previewType === 'image'">
+                        <div class="text-center">
+                            <img :src="previewData.previewUrl"
+                                 :alt="previewData.fileName"
+                                 class="max-w-full max-h-[70vh] mx-auto rounded-lg shadow-lg"
+                                 @load="previewData.loading = false"
+                                 @error="previewData.error = 'Failed to load image'" />
+                        </div>
                     </template>
 
-                <template x-if="previewType === 'document'">
-                    <div id="documentPreview">Loading document...</div>
-                </template>
+                    <!-- PDF Preview -->
+                    <template x-if="previewData.previewType === 'pdf'">
+                        <div class="w-full">
+                            <iframe :src="previewData.previewUrl"
+                                    class="w-full h-[70vh] border-0 rounded-lg"
+                                    @load="previewData.loading = false"
+                                    @error="previewData.error = 'Failed to load PDF'">
+                            </iframe>
+                        </div>
+                    </template>
+
+                    <!-- Video Preview -->
+                    <template x-if="previewData.previewType === 'video'">
+                        <div class="text-center" x-data="videoPlayer()">
+                            <!-- Custom Video Player Container -->
+                            <div class="relative bg-black rounded-lg shadow-lg mx-auto"
+                                 :class="{ 'max-w-full max-h-[70vh]': true }"
+                                 @click="togglePlayPause()"
+                                 @mousemove="showControls()"
+                                 @mouseleave="hideControls()">
+
+                                <!-- Video Element -->
+                                <video ref="videoElement"
+                                       class="w-full h-full rounded-lg"
+                                       preload="metadata"
+                                       @loadedmetadata="onVideoLoaded()"
+                                       @loadeddata="onVideoReady()"
+                                       @error="onVideoError($event)"
+                                       @timeupdate="onTimeUpdate()"
+                                       @ended="onVideoEnded()"
+                                       @waiting="onVideoWaiting()"
+                                       @canplay="onVideoCanPlay()"
+                                       @progress="onVideoProgress()"
+                                       playsinline>
+                                    <source :src="previewData.previewUrl" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+
+                                <!-- Loading Overlay -->
+                                <div x-show="videoLoading"
+                                     class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+                                    <div class="text-center text-white">
+                                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                                        <p>Loading video...</p>
+                                    </div>
+                                </div>
+
+                                <!-- Error Overlay -->
+                                <div x-show="videoError"
+                                     class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 rounded-lg">
+                                    <div class="text-center text-white">
+                                        <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+                                        <p class="mb-4" x-text="videoErrorMessage">Failed to load video</p>
+                                        <button @click="retryVideo()"
+                                                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                            Retry
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Play/Pause Overlay -->
+                                <div x-show="showPlayButton"
+                                     class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div class="bg-black bg-opacity-50 rounded-full p-4">
+                                        <i :class="isPlaying ? 'fas fa-pause' : 'fas fa-play'"
+                                           class="text-white text-3xl"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Custom Controls -->
+                                <div x-show="showVideoControls"
+                                     x-transition:enter="transition ease-out duration-200"
+                                     x-transition:enter-start="opacity-0"
+                                     x-transition:enter-end="opacity-100"
+                                     x-transition:leave="transition ease-in duration-200"
+                                     x-transition:leave-start="opacity-100"
+                                     x-transition:leave-end="opacity-0"
+                                     class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 rounded-b-lg">
+
+                                    <!-- Progress Bar -->
+                                    <div class="mb-3">
+                                        <div class="relative h-1 bg-gray-600 rounded cursor-pointer"
+                                             @click="seekTo($event)">
+                                            <!-- Buffered Progress -->
+                                            <div class="absolute h-full bg-gray-400 rounded"
+                                                 :style="{ width: bufferedPercent + '%' }"></div>
+                                            <!-- Current Progress -->
+                                            <div class="absolute h-full bg-blue-500 rounded"
+                                                 :style="{ width: progressPercent + '%' }"></div>
+                                            <!-- Seek Handle -->
+                                            <div class="absolute w-3 h-3 bg-blue-500 rounded-full -mt-1 -ml-1.5"
+                                                 :style="{ left: progressPercent + '%' }"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Control Buttons -->
+                                    <div class="flex items-center justify-between text-white">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Play/Pause Button -->
+                                            <button @click="togglePlayPause()"
+                                                    class="hover:text-blue-400 transition-colors">
+                                                <i :class="isPlaying ? 'fas fa-pause' : 'fas fa-play'"
+                                                   class="text-lg"></i>
+                                            </button>
+
+                                            <!-- Volume Control -->
+                                            <div class="flex items-center space-x-2">
+                                                <button @click="toggleMute()"
+                                                        class="hover:text-blue-400 transition-colors">
+                                                    <i :class="isMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up'"
+                                                       class="text-sm"></i>
+                                                </button>
+                                                <input type="range"
+                                                       min="0" max="100"
+                                                       :value="volume"
+                                                       @input="setVolume($event.target.value)"
+                                                       class="w-16 h-1 bg-gray-600 rounded appearance-none slider">
+                                            </div>
+
+                                            <!-- Time Display -->
+                                            <span class="text-sm" x-text="formatTime(currentTime) + ' / ' + formatTime(duration)">
+                                                0:00 / 0:00
+                                            </span>
+                                        </div>
+
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Fullscreen Button -->
+                                            <button @click="toggleFullscreen()"
+                                                    class="hover:text-blue-400 transition-colors">
+                                                <i class="fas fa-expand text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Video Info -->
+                            <div class="mt-4 text-sm text-gray-600">
+                                <div class="flex justify-center items-center space-x-4">
+                                    <span x-show="duration > 0">Duration: <span x-text="formatTime(duration)"></span></span>
+                                    <span x-show="videoSize">Size: <span x-text="videoSize"></span></span>
+                                    <span class="text-green-600" x-show="isPlaying">Playing</span>
+                                    <span class="text-yellow-600" x-show="videoLoading">Buffering</span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Document Preview -->
+                    <template x-if="previewData.previewType === 'document'">
+                        <div class="text-center">
+                            <div class="bg-gray-100 rounded-lg p-8">
+                                <i class="fas fa-file-alt text-gray-400 text-6xl mb-4"></i>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">Document Preview</h3>
+                                <p class="text-gray-600 mb-4">This document type requires download to view properly.</p>
+                                <button @click="downloadCurrentFile()"
+                                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                                    <i class="fas fa-download mr-2"></i>
+                                    Download Document
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
     </div>
 
 
+    <script th:src="@{/js/video-player.js}"></script>
     <script th:src="@{/js/alpine-dashboard.js}"></script>
     <script th:src="@{/js/script.js}"></script>
     <script th:src="@{/js/dashboard.js}"></script>

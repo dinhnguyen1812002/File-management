@@ -24,6 +24,7 @@ public class User {
     private String avatar;
     private String email;
     private String bio;
+
     @OneToMany(mappedBy = "uploader")
     private List<File> uploadedFiles = new ArrayList<>();
 

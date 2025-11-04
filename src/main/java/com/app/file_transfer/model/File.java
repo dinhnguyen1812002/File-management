@@ -20,6 +20,7 @@ import com.app.file_transfer.model.base.BaseEntity;
 @AllArgsConstructor
 @NoArgsConstructor
 public class File extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -40,7 +41,8 @@ public class File extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "folder_id")
     private Folder folder;
-   
+
+
     
 
     // Constructors, getters, setters

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Ticket Form</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; }
+        label { display: block; margin: 10px 0 5px; }
+        input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #response { margin-top: 20px; padding: 10px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h2>Send Ticket</h2>
+    <form id="ticketForm">
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title" required>
+
+        <label for="content">Content:</label>
+        <textarea id="content" name="content" required></textarea>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email">
+
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name">
+
+        <label for="tags">Tags (comma-separated):</label>
+        <input type="text" id="tags" name="tags" placeholder="urgent,bug">
+
+        <label for="categories">Categories (comma-separated):</label>
+        <input type="text" id="categories" name="categories" placeholder="support,technical">
+
+        <button type="submit">Send Ticket</button>
+    </form>
+
+    <div id="response"></div>
+
+    <script>
+        document.getElementById('ticketForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const apiUrl = 'http://localhost:8000/api/posts/transfer'; // Thay bằng URL API của bạn
+            const apiKey = 'AF58EA15377EF2755D8FC29CDAF16'; // Thay bằng API key của bạn
+
+            const formData = {
+                title: document.getElementById('title').value,
+                content: document.getElementById('content').value,
+                email: document.getElementById('email').value,
+                name: document.getElementById('name').value,
+                tags: document.getElementById('tags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+                categories: document.getElementById('categories').value.split(',').map(cat => cat.trim()).filter(cat => cat),
+            };
+
+            const responseDiv = document.getElementById('response');
+            responseDiv.innerHTML = 'Sending...';
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-API-KEY': apiKey,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    responseDiv.innerHTML = `<pre>Success: ${JSON.stringify(result, null, 2)}</pre>`;
+                } else {
+                    responseDiv.innerHTML = `<pre>Error: ${result.error || 'Request failed'}</pre>`;
+                }
+            } catch (error) {
+                responseDiv.innerHTML = `<pre>Error: ${error.message}</pre>`;
+            }
+        });
+    </script>
+</body>
+</html>

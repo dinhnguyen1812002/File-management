@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.app.file_transfer.services.UserDetailsImpl;
 
 @Controller
-@RequestMapping("/")
+@RequestMapping
 public class HomeController {
     // @GetMapping
     // public String home(){
@@ -33,5 +33,10 @@ public String home(Model model, @AuthenticationPrincipal UserDetails userDetails
     @GetMapping("/upload")
     public String uploadForm(){
         return "upload";
+    }
+
+    @GetMapping("/ticket")
+    public String tickets (){
+        return "tickets";
     }
 }

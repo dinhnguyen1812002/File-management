@@ -5,6 +5,8 @@ document.addEventListener('alpine:init', () => {
         showCreateFolderModal: false,
         showUploadModal: false,
         showShareModel: false,
+        showMoveModal: false,
+        showPreviewModal: false,
         showPasswordModal: false,
         showPasswordVerificationModal: false,
 
@@ -13,6 +15,21 @@ document.addEventListener('alpine:init', () => {
             id: null,
             fileName: ''
         },
+
+        // Preview data
+        previewData: {
+            fileId: null,
+            fileName: '',
+            fileType: '',
+            fileSize: '',
+            previewUrl: '',
+            previewType: '',
+            loading: false,
+            error: null
+        },
+
+        // Abort controller for canceling requests
+        previewAbortController: null,
         selectedFolder: null,
         selectedFiles: [],
         passwordVerificationData: {
@@ -47,10 +64,10 @@ document.addEventListener('alpine:init', () => {
         verifyPassword() {
             const { folderId, password } = this.passwordVerificationData;
 
-            if (!password.trim()) {
-                this.passwordVerificationData.error = 'Please enter a password';
-                return;
-            }
+            // if (!password.trim()) {
+            //     this.passwordVerificationData.error = 'Please enter a password';
+            //     return;
+            // }
 
             // Create form data
             const formData = new FormData();
@@ -337,6 +354,167 @@ document.addEventListener('alpine:init', () => {
             this.openShareModal(fileId, fileName);
         },
 
+        // Handle move button click
+        handleMoveClick(button) {
+            const fileId = button.getAttribute("data-file-id");
+            const fileName = button.getAttribute("data-file-name");
+
+            this.openMoveModal(fileId, fileName);
+        },
+
+        // Open move modal
+        openMoveModal(fileId, fileName) {
+            console.log('Opening move modal for file:', fileId, fileName);
+
+            // Set form action and input value
+            const form = document.getElementById('moveForm');
+            const input = document.getElementById('moveFileIdInput');
+
+            if (form && input) {
+                form.action = '/files/move/' + fileId;
+                input.value = fileId;
+                console.log('Form action set to:', form.action);
+            } else {
+                console.error('Form or input not found');
+            }
+
+            // Set selected file data
+            this.selectedFile.id = fileId;
+            this.selectedFile.fileName = fileName;
+
+            // Clear any previously selected radio buttons and select root by default
+            const radioButtons = form.querySelectorAll('input[name="targetFolderId"]');
+            radioButtons.forEach(radio => radio.checked = false);
+
+            // Select root option by default
+            const rootRadio = form.querySelector('input[name="targetFolderId"][value=""]');
+            if (rootRadio) {
+                rootRadio.checked = true;
+            }
+
+            // Show modal
+            this.showMoveModal = true;
+        },
+
+        // Handle move form submit
+        handleMoveSubmit(event) {
+            const form = event.target;
+            const selectedRadio = form.querySelector('input[name="targetFolderId"]:checked');
+
+            console.log('Form submit:', form.action);
+            console.log('Selected radio:', selectedRadio ? selectedRadio.value : 'none');
+
+            if (!selectedRadio) {
+                event.preventDefault();
+                alert('Please select a destination folder.');
+                return false;
+            }
+
+            // Let the form submit normally
+            return true;
+        },
+
+        // Preview file methods
+        async openPreviewModal(fileId, fileName) {
+            // Cancel any existing requests
+            if (this.previewAbortController) {
+                this.previewAbortController.abort();
+            }
+
+            // Create new abort controller
+            this.previewAbortController = new AbortController();
+
+            this.previewData.loading = true;
+            this.previewData.error = null;
+            this.previewData.fileId = fileId;
+            this.previewData.fileName = fileName;
+            this.showPreviewModal = true;
+
+            try {
+                // Get file metadata with abort signal
+                const metadataResponse = await fetch(`/files/api/preview/${fileId}/metadata`, {
+                    signal: this.previewAbortController.signal
+                });
+                if (!metadataResponse.ok) {
+                    throw new Error('Failed to load file metadata');
+                }
+                const metadata = await metadataResponse.json();
+
+                // Get preview info with abort signal
+                const previewResponse = await fetch(`/files/api/preview/${fileId}/info`, {
+                    signal: this.previewAbortController.signal
+                });
+                if (!previewResponse.ok) {
+                    throw new Error('Failed to load preview info');
+                }
+                const previewInfo = await previewResponse.json();
+
+                // Update preview data
+                this.previewData.fileName = metadata.fileName;
+                this.previewData.fileType = metadata.fileType;
+                this.previewData.fileSize = metadata.fileSizeFormatted;
+                this.previewData.previewUrl = previewInfo.previewUrl;
+                this.previewData.previewType = previewInfo.previewType.toLowerCase();
+                this.previewData.loading = false;
+
+            } catch (error) {
+                // Don't show error if request was aborted (user closed modal)
+                if (error.name === 'AbortError') {
+                    console.log('Preview request was cancelled');
+                    return;
+                }
+
+                console.error('Error loading preview:', error);
+                this.previewData.error = error.message;
+                this.previewData.loading = false;
+            }
+        },
+
+        downloadCurrentFile() {
+            if (this.previewData.fileId) {
+                window.location.href = `/files/download/${this.previewData.fileId}`;
+            }
+        },
+
+        closePreviewModal() {
+            // Stop any video playback before closing
+            const videoElements = document.querySelectorAll('.preview-modal video');
+            videoElements.forEach(video => {
+                if (!video.paused) {
+                    video.pause();
+                }
+                // Clear video source to stop any ongoing requests
+                video.src = '';
+                video.load();
+            });
+
+            // Destroy video player instances
+            const videoPlayerElements = document.querySelectorAll('[x-data*="videoPlayer"]');
+            videoPlayerElements.forEach(element => {
+                if (element._x_dataStack && element._x_dataStack[0] && element._x_dataStack[0].destroy) {
+                    element._x_dataStack[0].destroy();
+                }
+            });
+
+            // Clear any ongoing fetch requests
+            if (this.previewAbortController) {
+                this.previewAbortController.abort();
+                this.previewAbortController = null;
+            }
+
+            this.showPreviewModal = false;
+            this.previewData = {
+                fileId: null,
+                fileName: '',
+                fileType: '',
+                fileSize: '',
+                previewUrl: '',
+                previewType: '',
+                loading: false,
+                error: null
+            };
+        },
+
         // Set folder password
         setFolderPassword(folderId, folderName) {
             // Set the folder ID in the hidden input
@@ -388,4 +566,85 @@ document.addEventListener('alpine:initialized', () => {
             console.error('Dashboard instance not available');
         }
     };
+
+    // Add global function for opening move modal
+    window.openMoveModal = function(fileId, fileName) {
+        if (window.dashboardInstance) {
+            window.dashboardInstance.openMoveModal(fileId, fileName);
+        } else {
+            console.error('Dashboard instance not available');
+        }
+    };
+
+    // Add event listeners for file action buttons
+    document.addEventListener('click', function(e) {
+        // Handle move file button
+        if (e.target.closest('.move-file-btn')) {
+            const button = e.target.closest('.move-file-btn');
+            const fileId = button.getAttribute('data-file-id');
+            const fileName = button.getAttribute('data-file-name');
+
+            if (window.dashboardInstance) {
+                window.dashboardInstance.openMoveModal(fileId, fileName);
+            }
+        }
+
+        // Handle share file button
+        if (e.target.closest('.share-file-btn')) {
+            const button = e.target.closest('.share-file-btn');
+            const fileId = button.getAttribute('data-file-id');
+            const fileName = button.getAttribute('data-file-name');
+
+            if (window.dashboardInstance) {
+                window.dashboardInstance.openShareModal(fileId, fileName);
+            }
+        }
+
+        // Handle folder password button
+        if (e.target.closest('.folder-password-btn')) {
+            const button = e.target.closest('.folder-password-btn');
+            const folderId = button.getAttribute('data-folder-id');
+
+            if (window.dashboardInstance) {
+                window.dashboardInstance.handlePasswordClick(button);
+            }
+        }
+
+        // Handle preview file button
+        if (e.target.closest('.preview-file-btn')) {
+            const button = e.target.closest('.preview-file-btn');
+            const fileId = button.getAttribute('data-file-id');
+            const fileName = button.getAttribute('data-file-name');
+
+            if (window.dashboardInstance) {
+                window.dashboardInstance.openPreviewModal(fileId, fileName);
+            }
+        }
+    });
+
+    // Cleanup when page unloads to prevent connection errors
+    window.addEventListener('beforeunload', function() {
+        // Stop all video elements
+        const videos = document.querySelectorAll('video');
+        videos.forEach(video => {
+            if (!video.paused) {
+                video.pause();
+            }
+            video.src = '';
+            video.load();
+        });
+
+        // Destroy all video player instances
+        const videoPlayerElements = document.querySelectorAll('[x-data*="videoPlayer"]');
+        videoPlayerElements.forEach(element => {
+            if (element._x_dataStack && element._x_dataStack[0] && element._x_dataStack[0].destroy) {
+                element._x_dataStack[0].destroy();
+            }
+        });
+
+        // Cancel any ongoing preview requests
+        if (window.dashboardInstance && window.dashboardInstance.previewAbortController) {
+            window.dashboardInstance.previewAbortController.abort();
+        }
+    });
 });

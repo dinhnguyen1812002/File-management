@@ -1,8 +1,10 @@
 package com.app.file_transfer.services;
 
 import com.app.file_transfer.model.File;
+import com.app.file_transfer.model.Folder;
 import com.app.file_transfer.model.User;
 import com.app.file_transfer.repository.FileRepository;
+import com.app.file_transfer.repository.FolderRepository;
 import com.app.file_transfer.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,9 @@ public class FileService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private FolderRepository folderRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -126,7 +131,7 @@ public class FileService {
                 deleteFile(fileId, username);
                 // Ensure physical deletion
                fileStorageService.deleteFile(fileName);
-            
+
             } catch (Exception e) {
                 errors.add("Error deleting file " + fileId + ": " + e.getMessage());
             }
@@ -135,5 +140,44 @@ public class FileService {
         if (!errors.isEmpty()) {
             throw new RuntimeException("Some files could not be deleted: " + String.join("; ", errors));
         }
+    }
+
+    // Move file to another folder or to root
+    @Transactional
+    public void moveFile(Long fileId, Long targetFolderId, String username) {
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new IllegalArgumentException("File not found"));
+        User user = userRepository.findByUsername(username);
+
+        // Check if user has permission to move this file
+        if (!file.getUploader().equals(user)) {
+            throw new SecurityException("User does not have permission to move this file.");
+        }
+
+        Folder targetFolder = null;
+        if (targetFolderId != null) {
+            targetFolder = folderRepository.findById(targetFolderId)
+                    .orElseThrow(() -> new IllegalArgumentException("Target folder not found"));
+
+            // Check if user owns the target folder
+            if (!targetFolder.getUser().equals(user)) {
+                throw new SecurityException("User does not have permission to move file to this folder.");
+            }
+        }
+
+        // Remove file from current folder if it's in one
+        if (file.getFolder() != null) {
+            file.getFolder().getFiles().remove(file);
+        }
+
+        // Set new folder (null means root)
+        file.setFolder(targetFolder);
+
+        // Add file to target folder if not null
+        if (targetFolder != null) {
+            targetFolder.getFiles().add(file);
+        }
+
+        fileRepository.save(file);
     }
 }

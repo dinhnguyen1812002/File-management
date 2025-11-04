@@ -106,11 +106,11 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600">Storage Used</p>
-                    <p class="text-2xl font-bold stats-counter">2.4 GB</p>
+                    <p class="text-2xl font-bold stats-counter" data-storage="used" th:text="${totalUsedFormatted}">0 B</p>
                 </div>
             </div>
         </div>
-        
+
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
@@ -118,7 +118,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600">Shared Files</p>
-                    <p class="text-2xl font-bold stats-counter">8</p>
+                    <p class="text-2xl font-bold stats-counter" th:text="${storageStats.sharedFiles}">0</p>
                 </div>
             </div>
         </div>
@@ -191,8 +191,8 @@
                     <div class="flex items-center justify-center">
                         <svg class="w-32 h-32">
                             <circle cx="64" cy="64" r="50" stroke="#e5e7eb" stroke-width="8" fill="transparent"></circle>
-                            <circle cx="64" cy="64" r="50" stroke="url(#gradient)" stroke-width="8" fill="transparent" 
-                                    stroke-dasharray="314" stroke-dashoffset="125" class="progress-ring"></circle>
+                            <circle cx="64" cy="64" r="50" stroke="url(#gradient)" stroke-width="8" fill="transparent"
+                                    th:attr="stroke-dasharray='314', stroke-dashoffset=${314 - (314 * storageUsagePercentage / 100)}" class="progress-ring"></circle>
                             <defs>
                                 <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                                     <stop offset="0%" style="stop-color:#8b5cf6"/>
@@ -201,23 +201,75 @@
                             </defs>
                         </svg>
                         <div class="absolute text-center">
-                            <p class="text-2xl font-bold text-gray-900">2.4GB</p>
-                            <p class="text-sm text-gray-500">of 5GB</p>
+                            <p class="text-2xl font-bold text-gray-900 storage-center-used" th:text="${totalUsedFormatted}">0 B</p>
+                            <p class="text-sm text-gray-500 storage-center-limit" th:text="'of ' + ${storageLimitFormatted}">of 5GB</p>
                         </div>
                     </div>
                     
                     <div class="mt-4 space-y-2">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-600">Documents</span>
-                            <span class="font-medium">1.2GB</span>
+                        <div class="flex justify-between text-sm" th:if="${storageStats.documentBytes > 0}">
+                            <span class="text-gray-600 flex items-center">
+                                <i class="fas fa-file-alt text-blue-500 mr-2"></i>Documents
+                            </span>
+                            <span class="font-medium" th:text="${documentsFormatted}">0 B</span>
                         </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-600">Images</span>
-                            <span class="font-medium">0.8GB</span>
+                        <div class="flex justify-between text-sm" th:if="${storageStats.imageBytes > 0}">
+                            <span class="text-gray-600 flex items-center">
+                                <i class="fas fa-image text-green-500 mr-2"></i>Images
+                            </span>
+                            <span class="font-medium" th:text="${imagesFormatted}">0 B</span>
                         </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-600">Others</span>
-                            <span class="font-medium">0.4GB</span>
+                        <div class="flex justify-between text-sm" th:if="${storageStats.videoBytes > 0}">
+                            <span class="text-gray-600 flex items-center">
+                                <i class="fas fa-video text-red-500 mr-2"></i>Videos
+                            </span>
+                            <span class="font-medium" th:text="${videosFormatted}">0 B</span>
+                        </div>
+                        <div class="flex justify-between text-sm" th:if="${storageStats.audioBytes > 0}">
+                            <span class="text-gray-600 flex items-center">
+                                <i class="fas fa-music text-purple-500 mr-2"></i>Audio
+                            </span>
+                            <span class="font-medium" th:text="${audioFormatted}">0 B</span>
+                        </div>
+                        <div class="flex justify-between text-sm" th:if="${storageStats.otherBytes > 0}">
+                            <span class="text-gray-600 flex items-center">
+                                <i class="fas fa-file text-gray-500 mr-2"></i>Others
+                            </span>
+                            <span class="font-medium" th:text="${othersFormatted}">0 B</span>
+                        </div>
+
+                        <!-- Show message if no files -->
+                        <div th:if="${storageStats.totalFiles == 0}" class="text-center py-4">
+                            <i class="fas fa-folder-open text-gray-400 text-2xl mb-2"></i>
+                            <p class="text-sm text-gray-500">No files uploaded yet</p>
+                        </div>
+                    </div>
+
+                    <!-- Storage Progress Bar -->
+                    <div class="mt-6 pt-4 border-t border-gray-200">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>Storage Usage</span>
+                            <span class="storage-progress-text" th:text="${#numbers.formatDecimal(storageUsagePercentage, 1, 1)} + '%'">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="storage-progress-bar bg-gradient-to-r from-purple-500 to-indigo-600 h-2 rounded-full transition-all duration-500"
+                                 th:style="'width: ' + ${storageUsagePercentage} + '%'"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span th:text="${totalUsedFormatted}">0 B</span>
+                            <span th:text="${storageLimitFormatted}">5 GB</span>
+                        </div>
+
+                        <!-- Warning if storage is almost full -->
+                        <div th:if="${storageUsagePercentage > 80}" class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+                                <p class="text-sm text-yellow-800">
+                                    <span th:if="${storageUsagePercentage > 95}">Storage almost full!</span>
+                                    <span th:unless="${storageUsagePercentage > 95}">Storage getting full</span>
+                                    Consider deleting some files.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -391,6 +443,54 @@
         
         // Trigger counter animation on page load
         setTimeout(animateCounters, 500);
+
+        // Storage usage functions
+        function updateStorageUsage() {
+            fetch('/api/storage-usage')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error fetching storage usage:', data.error);
+                        return;
+                    }
+
+                    // Update storage used in stats card
+                    const storageUsedElement = document.querySelector('.stats-counter[data-storage="used"]');
+                    if (storageUsedElement) {
+                        storageUsedElement.textContent = data.totalUsedFormatted;
+                    }
+
+                    // Update progress ring
+                    const progressRing = document.querySelector('.progress-ring');
+                    if (progressRing) {
+                        const circumference = 314;
+                        const offset = circumference - (circumference * data.usagePercentage / 100);
+                        progressRing.style.strokeDashoffset = offset;
+                    }
+
+                    // Update center text
+                    const centerUsed = document.querySelector('.storage-center-used');
+                    const centerLimit = document.querySelector('.storage-center-limit');
+                    if (centerUsed) centerUsed.textContent = data.totalUsedFormatted;
+                    if (centerLimit) centerLimit.textContent = 'of ' + data.storageLimitFormatted;
+
+                    // Update progress bar
+                    const progressBar = document.querySelector('.storage-progress-bar');
+                    const progressText = document.querySelector('.storage-progress-text');
+                    if (progressBar) {
+                        progressBar.style.width = data.usagePercentage + '%';
+                    }
+                    if (progressText) {
+                        progressText.textContent = data.usagePercentage.toFixed(1) + '%';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating storage usage:', error);
+                });
+        }
+
+        // Update storage usage every 30 seconds
+        setInterval(updateStorageUsage, 30000);
         
         // Auto-hide alerts after 5 seconds
         const alerts = document.querySelectorAll('[class*="bg-green-50"], [class*="bg-red-50"]');

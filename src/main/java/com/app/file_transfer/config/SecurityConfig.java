@@ -42,15 +42,17 @@ public class SecurityConfig {
                                                    UserDetailsService userDetailsService) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors-> cors.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/").permitAll()
                 .requestMatchers("/files/**").authenticated()
                 .requestMatchers("/register", "/login").permitAll()
+                .requestMatchers("/ticket").permitAll()
                 .anyRequest().permitAll()
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .defaultSuccessUrl("/")
+                .defaultSuccessUrl("/files/dashboard")
                 .permitAll()
             )
             .logout(logout -> logout
