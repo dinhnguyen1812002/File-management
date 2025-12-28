@@ -1,4 +1,4 @@
-package com.app.file_transfer.repository;
+package com.app.file_transfer.model;
 
 
 import jakarta.persistence.*;
